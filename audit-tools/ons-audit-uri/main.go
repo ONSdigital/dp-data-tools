@@ -2311,7 +2311,7 @@ func getPageData(shortURI string, fieldName string, parentURI string, index int,
 		}
 
 		payload, err := json.Marshal(data)
-		checkMarshaling(fullURI, err, 9, &payload, &fixedJSON, "datasetLandingPageResponse")
+		checkMarshalingDeepEqual(fullURI, err, 9, &payload, &fixedJSON, "datasetLandingPageResponse")
 
 		saveContentPageToCollection(datasetLandingPageJsFile, &datasetLandingPageCount, datasetLandingPageCollectionName, bodyTextCopy, shortURI)
 		if cfg.FullDepth {
@@ -2326,7 +2326,7 @@ func getPageData(shortURI string, fieldName string, parentURI string, index int,
 		}
 
 		payload, err := json.Marshal(data)
-		checkMarshaling(fullURI, err, 10, &payload, &fixedJSON, "datasetLandingPageResponse")
+		checkMarshaling(fullURI, err, 10, &payload, &fixedJSON, "staticMethodologyResponse")
 
 		saveContentPageToCollection(staticMethodologyJsFile, &staticMethodologyCount, staticMethodologyCollectionName, bodyTextCopy, shortURI)
 		if cfg.FullDepth {
