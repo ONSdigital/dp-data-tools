@@ -186,6 +186,7 @@ type ContactDetails struct {
 // HomePageResponse represents the home page
 type HomePageResponse struct {
 	FeaturedContent *[]FeaturedContentLinks `bson:"featuredContent,omitempty"  json:"featuredContent,omitempty"`
+	AroundONS       *[]string               `bson:"aroundONS,omitempty"        json:"aroundONS,omitempty"`
 	ServiceMessage  *string                 `bson:"serviceMessage,omitempty"   json:"serviceMessage,omitempty"`
 	Type            *string                 `bson:"type,omitempty"             json:"type,omitempty"`
 	URI             *string                 `bson:"uri,omitempty"              json:"uri,omitempty"`
