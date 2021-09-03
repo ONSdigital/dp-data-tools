@@ -68,8 +68,8 @@ type cognito_user struct {
 	mfa_enabled string
 }
 
-func convert_cognito_user_to_slice(input cognito_user) (output []string) {
-	output = []string{
+func convert_cognito_user_to_slice(input cognito_user) []string {
+	return []string{
 		input.username,
 		input.name,
 		input.given_name,
@@ -92,7 +92,6 @@ func convert_cognito_user_to_slice(input cognito_user) (output []string) {
 		input.updated_at,
 		input.mfa_enabled,
 	}
-	return output
 }
 
 func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
