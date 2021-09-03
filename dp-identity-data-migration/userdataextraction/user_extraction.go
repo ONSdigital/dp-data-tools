@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	// "io/ioutil"
 	"os"
 
 	"time"
@@ -13,6 +12,37 @@ import (
 	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
 	"github.com/google/uuid"
 )
+
+type config struct {
+	filename,
+	host,
+	pword,
+	user string
+}
+
+func readConfig() (conf config) {
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if pair[0] == "filename" {
+			conf.filename = pair[1]
+		}
+		if pair[0] == "zebedee_user" {
+			conf.user = pair[1]
+		}
+		if pair[0] == "zebedee_pword" {
+			conf.pword = pair[1]
+		}
+		if pair[0] == "zebedee_host" {
+			conf.host = pair[1]
+		}
+	}
+	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.filename == "" {
+		fmt.Println("Please set Environment Variables ")
+		os.Exit(1)
+	}
+
+	return conf
+}
 
 type cognito_user struct {
 	username,
@@ -91,21 +121,6 @@ func convert_cognito_user_to_slice(input cognito_user) (output []string) {
 	return output
 }
 
-func getUsers(zebCli zebedee.Client, s zebedee.Session) (userlist []zebedee.User, err error) {
-
-	userList, err := zebCli.GetUsers(s)
-
-	if err != nil {
-		fmt.Println("get users error!")
-		return nil, err
-	}
-
-	for _, user := range userList {
-		fmt.Println(user)
-	}
-	return userList, nil
-}
-
 func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
 	for _, user := range userlist {
 		var (
@@ -137,40 +152,15 @@ func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
 	}
 }
 
-func readConfig() (filename, host, pword, user string) {
-	for _, e := range os.Environ() {
-		pair := strings.SplitN(e, "=", 2)
-		if pair[0] == "filename" {
-			filename = pair[1]
-		}
-		if pair[0] == "zebedee_user" {
-			user = pair[1]
-		}
-		if pair[0] == "zebedee_pword" {
-			pword = pair[1]
-		}
-		if pair[0] == "zebedee_host" {
-			host = pair[1]
-		}
-	}
-	if host == "" || pword == "" || user == "" || filename == "" {
-		fmt.Println("Please set Environment Variables ")
-		os.Exit(1)
-	}
-
-	return filename, host, pword, user
-}
-
 func main() {
 
-	filename, host, pword, user := readConfig()
-
+	conf := readConfig()
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
-	zebCli := zebedee.NewClient(host, httpCli)
+	zebCli := zebedee.NewClient(conf.host, httpCli)
 
 	c := zebedee.Credentials{
-		Email:    user,
-		Password: pword,
+		Email:    conf.user,
+		Password: conf.pword,
 	}
 
 	sess, err := zebCli.OpenSession(c)
@@ -179,7 +169,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	userList, err := getUsers(zebCli, sess)
+	userList, err := zebCli.GetUsers(sess)
 
 	if err != nil {
 		fmt.Println("Theres been an issue")
@@ -187,7 +177,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	csvfile, err := os.Create(filename)
+	csvfile, err := os.Create(conf.filename)
 	if err != nil {
 		fmt.Printf("failed creating file: %s", err)
 		os.Exit(1)
@@ -202,7 +192,7 @@ func main() {
 
 	csvwriter.Flush()
 
-	fmt.Println(len(userList), csvwriter.Error())
+	fmt.Println("There are ", len(userList), "records extracted to file", conf.filename, "csv Errors ", csvwriter.Error())
 	csvfile.Close()
 
 }
