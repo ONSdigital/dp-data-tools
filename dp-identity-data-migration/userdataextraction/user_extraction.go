@@ -68,32 +68,6 @@ type cognito_user struct {
 	mfa_enabled string
 }
 
-func populate_Header() (header cognito_user) {
-	header = cognito_user{
-		username:              "cognito:username",
-		name:                  "name",
-		given_name:            "given_name",
-		family_name:           "family_name",
-		middle_name:           "middle_name",
-		nickname:              "nickname",
-		preferred_username:    "preferred_username",
-		profile:               "profile",
-		picture:               "picture",
-		website:               "website",
-		email:                 "email",
-		email_verified:        "email_verified",
-		gender:                "gender",
-		birthdate:             "birthdate",
-		zoneinfo:              "zoneinfo",
-		locale:                "locale",
-		phone_number:          "phone_number",
-		phone_number_verified: "phone_number_verified",
-		address:               "address",
-		updated_at:            "updated_at",
-		mfa_enabled:           "cognito:mfa_enabled",
-	}
-	return header
-}
 func convert_cognito_user_to_slice(input cognito_user) (output []string) {
 	output = []string{
 		input.username,
@@ -153,6 +127,28 @@ func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
 }
 
 func main() {
+	var header = cognito_user{
+		username:              "cognito:username",
+		name:                  "name",
+		given_name:            "given_name",
+		family_name:           "family_name",
+		middle_name:           "middle_name",
+		nickname:              "nickname",
+		preferred_username:    "preferred_username",
+		profile:               "profile",
+		picture:               "picture",
+		website:               "website",
+		email:                 "email",
+		email_verified:        "email_verified",
+		gender:                "gender",
+		birthdate:             "birthdate",
+		zoneinfo:              "zoneinfo",
+		locale:                "locale",
+		phone_number:          "phone_number",
+		phone_number_verified: "phone_number_verified",
+		address:               "address",
+		updated_at:            "updated_at",
+		mfa_enabled:           "cognito:mfa_enabled"}
 
 	conf := readConfig()
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
@@ -184,7 +180,6 @@ func main() {
 	}
 	csvwriter := csv.NewWriter(csvfile)
 
-	header := populate_Header()
 	csvheader := convert_cognito_user_to_slice(header)
 	csvwriter.Write(csvheader)
 
