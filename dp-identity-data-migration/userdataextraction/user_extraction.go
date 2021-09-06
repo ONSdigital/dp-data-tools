@@ -20,29 +20,28 @@ type config struct {
 	user string
 }
 
-func readConfig() (conf config) {
-	for _, e := range os.Environ() {
-		pair := strings.SplitN(e, "=", 2)
-		if pair[0] == "filename" {
-			conf.filename = pair[1]
-		}
-		if pair[0] == "zebedee_user" {
-			conf.user = pair[1]
-		}
-		if pair[0] == "zebedee_pword" {
-			conf.pword = pair[1]
-		}
-		if pair[0] == "zebedee_host" {
-			conf.host = pair[1]
-		}
-	}
-	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.filename == "" {
-		fmt.Println("Please set Environment Variables ")
-		os.Exit(1)
-	}
-
-	return conf
-}
+var header = cognito_user{
+	username:              "cognito:username",
+	name:                  "name",
+	given_name:            "given_name",
+	family_name:           "family_name",
+	middle_name:           "middle_name",
+	nickname:              "nickname",
+	preferred_username:    "preferred_username",
+	profile:               "profile",
+	picture:               "picture",
+	website:               "website",
+	email:                 "email",
+	email_verified:        "email_verified",
+	gender:                "gender",
+	birthdate:             "birthdate",
+	zoneinfo:              "zoneinfo",
+	locale:                "locale",
+	phone_number:          "phone_number",
+	phone_number_verified: "phone_number_verified",
+	address:               "address",
+	updated_at:            "updated_at",
+	mfa_enabled:           "cognito:mfa_enabled"}
 
 type cognito_user struct {
 	username,
@@ -68,7 +67,31 @@ type cognito_user struct {
 	mfa_enabled string
 }
 
-func convert_cognito_user_to_slice(input cognito_user) []string {
+func readConfig() *config {
+	conf := &config{}
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if pair[0] == "filename" {
+			conf.filename = pair[1]
+		}
+		if pair[0] == "zebedee_user" {
+			conf.user = pair[1]
+		}
+		if pair[0] == "zebedee_pword" {
+			conf.pword = pair[1]
+		}
+		if pair[0] == "zebedee_host" {
+			conf.host = pair[1]
+		}
+	}
+	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.filename == "" {
+		fmt.Println("Please set Environment Variables ")
+		os.Exit(1)
+	}
+
+	return conf
+}
+func convert_to_slice(input cognito_user) []string {
 	return []string{
 		input.username,
 		input.name,
@@ -119,35 +142,13 @@ func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
 		csvline.mfa_enabled = "FALSE"
 		csvline.phone_number_verified = "FALSE"
 		csvline.email_verified = "TRUE"
-		if err := csvwriter.Write(convert_cognito_user_to_slice(csvline)); err != nil {
+		if err := csvwriter.Write(convert_to_slice(csvline)); err != nil {
 			fmt.Println("error writing record to csv:", err)
 		}
 	}
 }
 
 func main() {
-	var header = cognito_user{
-		username:              "cognito:username",
-		name:                  "name",
-		given_name:            "given_name",
-		family_name:           "family_name",
-		middle_name:           "middle_name",
-		nickname:              "nickname",
-		preferred_username:    "preferred_username",
-		profile:               "profile",
-		picture:               "picture",
-		website:               "website",
-		email:                 "email",
-		email_verified:        "email_verified",
-		gender:                "gender",
-		birthdate:             "birthdate",
-		zoneinfo:              "zoneinfo",
-		locale:                "locale",
-		phone_number:          "phone_number",
-		phone_number_verified: "phone_number_verified",
-		address:               "address",
-		updated_at:            "updated_at",
-		mfa_enabled:           "cognito:mfa_enabled"}
 
 	conf := readConfig()
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
@@ -179,7 +180,7 @@ func main() {
 	}
 	csvwriter := csv.NewWriter(csvfile)
 
-	csvheader := convert_cognito_user_to_slice(header)
+	csvheader := convert_to_slice(header)
 	csvwriter.Write(csvheader)
 
 	process_zebedee_users(csvwriter, userList)
