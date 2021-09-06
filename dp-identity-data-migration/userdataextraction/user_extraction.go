@@ -41,7 +41,8 @@ var header = cognito_user{
 	phone_number_verified: "phone_number_verified",
 	address:               "address",
 	updated_at:            "updated_at",
-	mfa_enabled:           "cognito:mfa_enabled"}
+	mfa_enabled:           "cognito:mfa_enabled",
+}
 
 type cognito_user struct {
 	username,
@@ -91,6 +92,7 @@ func readConfig() *config {
 
 	return conf
 }
+
 func convert_to_slice(input cognito_user) []string {
 	return []string{
 		input.username,
