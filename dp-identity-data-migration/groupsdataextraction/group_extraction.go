@@ -1,13 +1,10 @@
 package main
 
 import (
-	// "encoding/csv"
 	"encoding/csv"
 	"fmt"
-	"strings"
-
-	// "io/ioutil"
 	"os"
+	"strings"
 
 	"time"
 
@@ -137,6 +134,9 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	// from the groupList from zebedee
+	// open csv file write group header and then for every line write line to csv file
+	// flush and close csv
 
 	groups_csvfile, err := os.Create(conf.groups_filename)
 	if err != nil {
@@ -162,6 +162,10 @@ func main() {
 
 	fmt.Println("There are ", len(groupList.Teams), "records extracted to file", conf.groups_filename, "csv Errors ", csvwriter.Error())
 	groups_csvfile.Close()
+
+	// from the groupList from zebedee
+	// open csv file write usergroup header and then write csv line for every member in each line
+	// flush and close csv
 
 	usergroups_csvfile, err := os.Create(conf.groupusers_filename)
 	if err != nil {
