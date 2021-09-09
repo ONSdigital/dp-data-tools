@@ -22,6 +22,7 @@ type config struct {
 func readConfig() (conf config) {
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
+
 		if pair[0] == "groups_filename" {
 			conf.groups_filename = pair[1]
 		}
@@ -40,8 +41,11 @@ func readConfig() (conf config) {
 			conf.host = pair[1]
 		}
 	}
+
 	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.groups_filename == "" || conf.groupusers_filename == "" {
 		fmt.Println("Please set Environment Variables ")
+		fmt.Println(conf.host)
+
 		os.Exit(1)
 	}
 
@@ -92,6 +96,21 @@ func getgroups(zebCli zebedee.Client, s zebedee.Session) (grouplist zebedee.Team
 	return grouplist, nil
 }
 
+func getUsers(zebCli zebedee.Client, s zebedee.Session) (userlist []zebedee.User, err error) {
+
+	userList, err := zebCli.GetUsers(s)
+
+	if err != nil {
+		fmt.Println("get users error!")
+		return nil, err
+	}
+
+	for _, user := range userList {
+		fmt.Println(user)
+	}
+	return userList, nil
+}
+
 func convert_to_slice_group(input group) []string {
 	return []string{
 		input.GroupName,
@@ -111,12 +130,32 @@ func convert_to_slice_group_user(input user_group) []string {
 		input.GroupName,
 	}
 }
+
+func readCsvFile(filePath string) int {
+	f, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("Unable to read input file "+filePath, err)
+	}
+	defer f.Close()
+
+	csvReader := csv.NewReader(f)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		fmt.Println("Unable to parse file as CSV for "+filePath, err)
+	}
+
+	return len(records)
+}
+
+func getClient(conf config) zebedee.Client {
+	httpCli := zebedee.NewHttpClient(time.Second * 5)
+	return zebedee.NewClient(conf.host, httpCli)
+}
+
 func main() {
 
 	conf := readConfig()
-
-	httpCli := zebedee.NewHttpClient(time.Second * 5)
-	zebCli := zebedee.NewClient(conf.host, httpCli)
+	zebCli := getClient(conf)
 
 	c := zebedee.Credentials{
 		Email:    conf.user,
@@ -134,9 +173,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	// from the groupList from zebedee
-	// open csv file write group header and then for every line write line to csv file
-	// flush and close csv
 
 	groups_csvfile, err := os.Create(conf.groups_filename)
 	if err != nil {
@@ -159,22 +195,64 @@ func main() {
 
 	}
 	csvwriter.Flush()
-
-	fmt.Println("There are ", len(groupList.Teams), "records extracted to file", conf.groups_filename, "csv Errors ", csvwriter.Error())
 	groups_csvfile.Close()
 
-	// from the groupList from zebedee
-	// open csv file write usergroup header and then write csv line for every member in each line
-	// flush and close csv
+	actualrowcount := readCsvFile(conf.groups_filename) - 1
+	if actualrowcount == len(groupList.Teams) || csvwriter.Error() == nil {
+		fmt.Println(conf.groups_filename)
+		fmt.Println("Expected row count: - ", len(groupList.Teams))
+		fmt.Println("Actual row count: - ", actualrowcount)
+		fmt.Println("csv Errors ", csvwriter.Error())
+	} else {
+		fmt.Println(conf.groups_filename)
+		fmt.Println("There has been an error... ")
+		fmt.Println("Expected row count: - ", len(groupList.Teams))
+		fmt.Println("Actual row count: - ", actualrowcount)
+		fmt.Println("csv Errors ", csvwriter.Error())
+	}
 
+	tmplen := 0
 	usergroups_csvfile, err := os.Create(conf.groupusers_filename)
 	if err != nil {
 		fmt.Printf("failed creating file: %s", err)
 		os.Exit(1)
 	}
 	csvwriter = csv.NewWriter(usergroups_csvfile)
-	tmplen := 0
 	csvwriter.Write(convert_to_slice_group_user(user_group_header))
+
+	userList, err := getUsers(zebCli, sess)
+	if err != nil {
+		fmt.Println("Theres been an issue", err)
+		os.Exit(1)
+	}
+
+	for _, user := range userList {
+		permissions, err := zebCli.GetPermissions(sess, user.Email)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if permissions.Admin {
+			tmp := user_group{
+				UserPoolId: "",
+				Username:   user.Email,
+				GroupName:  "role-admin",
+			}
+			csvwriter.Write(convert_to_slice_group_user(tmp))
+			tmplen += 1
+		}
+
+		if permissions.Editor {
+			tmp := user_group{
+				UserPoolId: "",
+				Username:   user.Email,
+				GroupName:  "role-publisher",
+			}
+			csvwriter.Write(convert_to_slice_group_user(tmp))
+			tmplen += 1
+		}
+
+	}
+
 	for _, zebedeegroup := range groupList.Teams {
 		tmplen = tmplen + len(zebedeegroup.Members)
 		for _, member := range zebedeegroup.Members {
@@ -188,7 +266,23 @@ func main() {
 
 	}
 	csvwriter.Flush()
-
-	fmt.Println("There are ", tmplen, "records extracted to file", conf.groupusers_filename, "csv Errors ", csvwriter.Error())
 	usergroups_csvfile.Close()
+
+	fmt.Println("There are expected rows ", tmplen, ", actual rows", readCsvFile(conf.groupusers_filename), "records extracted to file", conf.groupusers_filename, "csv Errors ", csvwriter.Error())
+	usergroups_csvfile.Close()
+
+	actualrowcount = readCsvFile(conf.groupusers_filename) - 1
+	if actualrowcount == tmplen || csvwriter.Error() == nil {
+		fmt.Println(conf.groupusers_filename)
+		fmt.Println("Expected row count: - ", tmplen)
+		fmt.Println("Actual row count: - ", actualrowcount)
+		fmt.Println("csv Errors ", csvwriter.Error())
+	} else {
+		fmt.Println(conf.groupusers_filename)
+		fmt.Println("There has been an error... ")
+		fmt.Println("Expected row count: - ", tmplen)
+		fmt.Println("Actual row count: - ", actualrowcount)
+		fmt.Println("csv Errors ", csvwriter.Error())
+	}
+
 }
