@@ -82,11 +82,6 @@ var header_user_groups = user_group_csv{
 	Groups:   "groups",
 }
 
-type user_groups struct {
-	Username string
-	Groups   []string
-}
-
 func getgroups(zebCli zebedee.Client, s zebedee.Session) (grouplist zebedee.TeamsList, err error) {
 
 	grouplist, err = zebCli.ListTeams(s)
@@ -205,6 +200,7 @@ func main() {
 	if actualrowcount != len(groupList.Teams) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
 	}
+
 	fmt.Println("Expected row count: - ", len(groupList.Teams))
 	fmt.Println("Actual row count: - ", actualrowcount)
 	fmt.Println("csv Errors ", csvwriter.Error())
@@ -279,6 +275,7 @@ func main() {
 	if actualrowcount != len(userList) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
 	}
+
 	fmt.Println("Expected row count: - ", len(userList))
 	fmt.Println("Actual row count: - ", actualrowcount)
 	fmt.Println("csv Errors ", csvwriter.Error())
