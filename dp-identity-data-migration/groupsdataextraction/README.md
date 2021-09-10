@@ -45,6 +45,27 @@ two terminal windows are required  one for the tunnel, another to run extracts
    ```
 
 ### Output
+#### in Terminal 
+```
+=========  ... groups.csv file validiation =============
+Expected row count: -  14
+Actual row count: -  14
+csv Errors  <nil>
+=========
+...
+{zebedee prints to terminal the list of users}
+...
+---
+viewer@ons.gov.uk is not a user??? (these team members are not in the zebedee user list and not included in the migration)
+---
+=========  ...usergroups.csv file validiation =============
+Expected row count: -  108
+Actual row count: -  108
+csv Errors  <nil>
+=========
+```
+
+####Files
 This script creates 2 csv files 
 ####groups csv 
 group_name | user_pool_id | description | role_arn | precedence | last_modified_date | creation_date
@@ -52,8 +73,12 @@ group_name | user_pool_id | description | role_arn | precedence | last_modified_
 zebedee group name | empty | zebedee group name | empty | default value 10 | empty | empty 
 
 ####usergroup csv
-user_pool_id | user_name | group_name
---- | --- | ---
-empty | user email | group name or role 
+ser_name | group_name
+--- | ---
+user email | group or role names (comma separated list as string)
+
+
+
 
 **Note** *don't forget to unset the environmental variables that had been set*
+

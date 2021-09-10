@@ -45,6 +45,6 @@ This script creates 1 csv file
 #####user csv 
 cognito:username | name | given_name | family_name | middle_name | nickname | preferred_username | profile | picture | website | email | email_verified | gender | birthdate | zoneinfo | locale | phone_number | phone_number_verified | address | updated_at | cognito:mfa_enabled
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |	--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-6dc6ea02-f6ed-4c18-8e78-69319304d471 |  |  | sandy_971us |  |  |  |  |  |  |sandy_971us@yahoo.com | TRUE |  |  |  |  |  | FALSE |  |  | FALSE
+generate uuid |  |given_name from email  | family name from email |  |  |  |  |  |  |email | TRUE |  |  |  |  |  | FALSE |  |  | FALSE
 
 **Note** *don't forget to unset the environmental variables that had been set*

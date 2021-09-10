@@ -72,16 +72,19 @@ var group_header = group{
 	CreationDate:     "creation_date",
 }
 
-type user_group struct {
-	UserPoolId,
-	Username,
-	GroupName string
+type user_group_csv struct {
+	Username string
+	Groups   string
 }
 
-var user_group_header = user_group{
-	UserPoolId: "user_pool_id",
-	Username:   "user_name",
-	GroupName:  "group_name",
+var header_user_groups = user_group_csv{
+	Username: "user_name",
+	Groups:   "groups",
+}
+
+type user_groups struct {
+	Username string
+	Groups   []string
 }
 
 func getgroups(zebCli zebedee.Client, s zebedee.Session) (grouplist zebedee.TeamsList, err error) {
@@ -123,11 +126,10 @@ func convert_to_slice_group(input group) []string {
 	}
 }
 
-func convert_to_slice_group_user(input user_group) []string {
+func convert_to_slice_group_user(input user_group_csv) []string {
 	return []string{
-		input.UserPoolId,
 		input.Username,
-		input.GroupName,
+		input.Groups,
 	}
 }
 
@@ -151,6 +153,8 @@ func getClient(conf config) zebedee.Client {
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
 	return zebedee.NewClient(conf.host, httpCli)
 }
+
+var emptylist []string
 
 func main() {
 
@@ -196,29 +200,26 @@ func main() {
 	}
 	csvwriter.Flush()
 	groups_csvfile.Close()
-
+	fmt.Println("========= ", conf.groups_filename, "file validiation =============")
 	actualrowcount := readCsvFile(conf.groups_filename) - 1
-	if actualrowcount == len(groupList.Teams) || csvwriter.Error() == nil {
-		fmt.Println(conf.groups_filename)
-		fmt.Println("Expected row count: - ", len(groupList.Teams))
-		fmt.Println("Actual row count: - ", actualrowcount)
-		fmt.Println("csv Errors ", csvwriter.Error())
-	} else {
-		fmt.Println(conf.groups_filename)
+	if actualrowcount != len(groupList.Teams) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
-		fmt.Println("Expected row count: - ", len(groupList.Teams))
-		fmt.Println("Actual row count: - ", actualrowcount)
-		fmt.Println("csv Errors ", csvwriter.Error())
 	}
+	fmt.Println("Expected row count: - ", len(groupList.Teams))
+	fmt.Println("Actual row count: - ", actualrowcount)
+	fmt.Println("csv Errors ", csvwriter.Error())
+	fmt.Println("=========")
 
-	tmplen := 0
+	// tmplen := 0
+	tmpusergroups := make(map[string][]string)
+
 	usergroups_csvfile, err := os.Create(conf.groupusers_filename)
 	if err != nil {
 		fmt.Printf("failed creating file: %s", err)
 		os.Exit(1)
 	}
 	csvwriter = csv.NewWriter(usergroups_csvfile)
-	csvwriter.Write(convert_to_slice_group_user(user_group_header))
+	csvwriter.Write(convert_to_slice_group_user(header_user_groups))
 
 	userList, err := getUsers(zebCli, sess)
 	if err != nil {
@@ -227,62 +228,59 @@ func main() {
 	}
 
 	for _, user := range userList {
+
+		_, isKeyPresent := tmpusergroups[user.Email]
+		if !isKeyPresent {
+			tmpusergroups[user.Email] = emptylist
+		}
+
 		permissions, err := zebCli.GetPermissions(sess, user.Email)
 		if err != nil {
 			fmt.Println(err)
 		}
 		if permissions.Admin {
-			tmp := user_group{
-				UserPoolId: "",
-				Username:   user.Email,
-				GroupName:  "role-admin",
-			}
-			csvwriter.Write(convert_to_slice_group_user(tmp))
-			tmplen += 1
+			tmpusergroups[user.Email] = append(tmpusergroups[user.Email], "role-admin")
 		}
 
 		if permissions.Editor {
-			tmp := user_group{
-				UserPoolId: "",
-				Username:   user.Email,
-				GroupName:  "role-publisher",
-			}
-			csvwriter.Write(convert_to_slice_group_user(tmp))
-			tmplen += 1
+			tmpusergroups[user.Email] = append(tmpusergroups[user.Email], "role-publisher")
 		}
-
 	}
 
 	for _, zebedeegroup := range groupList.Teams {
-		tmplen = tmplen + len(zebedeegroup.Members)
+
 		for _, member := range zebedeegroup.Members {
-			tmp := user_group{
-				UserPoolId: "",
-				Username:   member,
-				GroupName:  zebedeegroup.Name,
+			_, isKeyPresent := tmpusergroups[member]
+			if !isKeyPresent {
+				fmt.Println("---")
+				fmt.Println(member, "is not a user???")
+				fmt.Println("---")
+			} else {
+				tmpusergroups[member] = append(tmpusergroups[member], zebedeegroup.Name)
 			}
-			csvwriter.Write(convert_to_slice_group_user(tmp))
+
 		}
+	}
+
+	for k, v := range tmpusergroups {
+		tmp := user_group_csv{
+			Username: k,
+			Groups:   strings.Join(v, ", "),
+		}
+		csvwriter.Write(convert_to_slice_group_user(tmp))
 
 	}
+
 	csvwriter.Flush()
 	usergroups_csvfile.Close()
 
-	fmt.Println("There are expected rows ", tmplen, ", actual rows", readCsvFile(conf.groupusers_filename), "records extracted to file", conf.groupusers_filename, "csv Errors ", csvwriter.Error())
-	usergroups_csvfile.Close()
-
 	actualrowcount = readCsvFile(conf.groupusers_filename) - 1
-	if actualrowcount == tmplen || csvwriter.Error() == nil {
-		fmt.Println(conf.groupusers_filename)
-		fmt.Println("Expected row count: - ", tmplen)
-		fmt.Println("Actual row count: - ", actualrowcount)
-		fmt.Println("csv Errors ", csvwriter.Error())
-	} else {
-		fmt.Println(conf.groupusers_filename)
+	fmt.Println("========= ", conf.groupusers_filename, "file validiation =============")
+	if actualrowcount != len(userList) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
-		fmt.Println("Expected row count: - ", tmplen)
-		fmt.Println("Actual row count: - ", actualrowcount)
-		fmt.Println("csv Errors ", csvwriter.Error())
 	}
-
+	fmt.Println("Expected row count: - ", len(userList))
+	fmt.Println("Actual row count: - ", actualrowcount)
+	fmt.Println("csv Errors ", csvwriter.Error())
+	fmt.Println("=========")
 }
