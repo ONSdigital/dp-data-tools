@@ -72,17 +72,17 @@ var group_header = group{
 	CreationDate:     "creation_date",
 }
 
-type user_group_csv struct {
+type userGroupCSV struct {
 	Username string
 	Groups   string
 }
 
-var header_user_groups = user_group_csv{
+var headerUserGroup = userGroupCSV{
 	Username: "user_name",
 	Groups:   "groups",
 }
 
-func convert_to_slice_group(input group) []string {
+func convertToSlice_Group(input group) []string {
 	return []string{
 		input.GroupName,
 		input.UserPoolId,
@@ -94,7 +94,7 @@ func convert_to_slice_group(input group) []string {
 	}
 }
 
-func convert_to_slice_group_user(input user_group_csv) []string {
+func convertToSlice_UserGroup(input userGroupCSV) []string {
 	return []string{
 		input.Username,
 		input.Groups,
@@ -152,7 +152,7 @@ func main() {
 		os.Exit(1)
 	}
 	csvwriter := csv.NewWriter(groupsCSVFile)
-	csvwriter.Write(convert_to_slice_group(group_header))
+	csvwriter.Write(convertToSlice_Group(group_header))
 
 	for _, zebedeegroup := range groupList.Teams {
 		tmp := group{
@@ -164,7 +164,7 @@ func main() {
 			LastModifiedDate: "",
 			CreationDate:     "",
 		}
-		csvwriter.Write(convert_to_slice_group(tmp))
+		csvwriter.Write(convertToSlice_Group(tmp))
 
 	}
 	csvwriter.Flush()
@@ -180,7 +180,6 @@ func main() {
 	fmt.Println("Actual row count: - ", actualRowCount)
 	fmt.Println("=========")
 
-	// tmplen := 0
 	tmpUserGroups := make(map[string][]string)
 
 	usergroupsCSVFile, err := os.Create(conf.groupUsersFilename)
@@ -189,7 +188,7 @@ func main() {
 		os.Exit(1)
 	}
 	csvwriter = csv.NewWriter(usergroupsCSVFile)
-	csvwriter.Write(convert_to_slice_group_user(header_user_groups))
+	csvwriter.Write(convertToSlice_UserGroup(headerUserGroup))
 
 	userList, err := zebCli.GetUsers(sess)
 
@@ -233,11 +232,11 @@ func main() {
 	}
 
 	for k, v := range tmpUserGroups {
-		tmp := user_group_csv{
+		tmp := userGroupCSV{
 			Username: k,
 			Groups:   strings.Join(v, ", "),
 		}
-		csvwriter.Write(convert_to_slice_group_user(tmp))
+		csvwriter.Write(convertToSlice_UserGroup(tmp))
 	}
 
 	csvwriter.Flush()
