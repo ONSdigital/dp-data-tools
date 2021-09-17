@@ -70,7 +70,7 @@ This script creates 2 csv files
 ####groups csv 
 group_name | user_pool_id | description | role_arn | precedence | last_modified_date | creation_date
 --- | --- | --- | --- | --- | --- | ---
-zebedee group name | empty | zebedee group name | empty | default value 10 | empty | empty 
+zebedee group ID | empty | zebedee group name | empty | default value 10 | empty | empty 
 
 ####usergroup csv
 ser_name | group_name
