@@ -101,33 +101,11 @@ func convertToSlice_UserGroup(input userGroupCSV) []string {
 	}
 }
 
-func readCsvFile(filePath string) int {
-	f, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println("Unable to read input file "+filePath, err)
-	}
-	defer f.Close()
-
-	csvReader := csv.NewReader(f)
-	records, err := csvReader.ReadAll()
-	if err != nil {
-		fmt.Println("Unable to parse file as CSV for "+filePath, err)
-	}
-
-	return len(records)
-}
-
-func getClient(conf config) zebedee.Client {
-	httpCli := zebedee.NewHttpClient(time.Second * 5)
-	return zebedee.NewClient(conf.host, httpCli)
-}
-
-var emptylist []string
-
 func main() {
 
 	conf := readConfig()
-	zebCli := getClient(conf)
+	httpCli := zebedee.NewHttpClient(time.Second * 5)
+	zebCli := zebedee.NewClient(conf.host, httpCli)
 
 	c := zebedee.Credentials{
 		Email:    conf.user,
@@ -140,6 +118,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// groups process
 	groupList, err := zebCli.ListTeams(sess)
 	if err != nil {
 		fmt.Println(err)
@@ -167,10 +146,10 @@ func main() {
 		csvwriter.Write(convertToSlice_Group(tmp))
 
 	}
-	csvwriter.Flush()
-	groupsCSVFile.Close()
+
 	fmt.Println("========= ", conf.groupsFilename, "file validiation =============")
-	actualRowCount := readCsvFile(conf.groupsFilename) - 1
+	records, _ := csv.NewReader(groupsCSVFile).ReadAll()
+	actualRowCount := len(records) - 1
 	if actualRowCount != len(groupList.Teams) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
 		fmt.Println("csv Errors ", csvwriter.Error())
@@ -179,6 +158,11 @@ func main() {
 	fmt.Println("Expected row count: - ", len(groupList.Teams))
 	fmt.Println("Actual row count: - ", actualRowCount)
 	fmt.Println("=========")
+
+	csvwriter.Flush()
+	groupsCSVFile.Close()
+
+	// UserGroups part...
 
 	tmpUserGroups := make(map[string][]string)
 
@@ -201,7 +185,7 @@ func main() {
 
 		_, isKeyPresent := tmpUserGroups[user.Email]
 		if !isKeyPresent {
-			tmpUserGroups[user.Email] = emptylist
+			tmpUserGroups[user.Email] = make([]string, 0)
 		}
 
 		permissions, err := zebCli.GetPermissions(sess, user.Email)
@@ -239,10 +223,8 @@ func main() {
 		csvwriter.Write(convertToSlice_UserGroup(tmp))
 	}
 
-	csvwriter.Flush()
-	usergroupsCSVFile.Close()
-
-	actualRowCount = readCsvFile(conf.groupUsersFilename) - 1
+	records, _ = csv.NewReader(usergroupsCSVFile).ReadAll()
+	actualRowCount = len(records)
 	fmt.Println("========= ", conf.groupUsersFilename, "file validiation =============")
 	if actualRowCount != len(userList) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
@@ -252,4 +234,7 @@ func main() {
 	fmt.Println("Expected row count: - ", len(userList))
 	fmt.Println("Actual row count: - ", actualRowCount)
 	fmt.Println("=========")
+
+	csvwriter.Flush()
+	usergroupsCSVFile.Close()
 }
