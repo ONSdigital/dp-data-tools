@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	// "io/ioutil"
 	"os"
 
 	"time"
@@ -20,6 +19,34 @@ type config struct {
 	pword,
 	user string
 }
+<<<<<<< HEAD:dp-identity-data-migration/userdataextraction/user_extraction.go
+=======
+
+var header = cognito_user{
+	username:              "cognito:username",
+	name:                  "name",
+	given_name:            "given_name",
+	family_name:           "family_name",
+	middle_name:           "middle_name",
+	nickname:              "nickname",
+	preferred_username:    "preferred_username",
+	profile:               "profile",
+	picture:               "picture",
+	website:               "website",
+	email:                 "email",
+	email_verified:        "email_verified",
+	gender:                "gender",
+	birthdate:             "birthdate",
+	zoneinfo:              "zoneinfo",
+	locale:                "locale",
+	phone_number:          "phone_number",
+	phone_number_verified: "phone_number_verified",
+	address:               "address",
+	updated_at:            "updated_at",
+	mfa_enabled:           "cognito:mfa_enabled",
+}
+
+>>>>>>> master:dp-identity-data-migration/user_extraction.go
 type cognito_user struct {
 	username,
 	name,
@@ -44,34 +71,33 @@ type cognito_user struct {
 	mfa_enabled string
 }
 
-func populate_Header() (header cognito_user) {
-	header = cognito_user{
-		username:              "cognito:username",
-		name:                  "name",
-		given_name:            "given_name",
-		family_name:           "family_name",
-		middle_name:           "middle_name",
-		nickname:              "nickname",
-		preferred_username:    "preferred_username",
-		profile:               "profile",
-		picture:               "picture",
-		website:               "website",
-		email:                 "email",
-		email_verified:        "email_verified",
-		gender:                "gender",
-		birthdate:             "birthdate",
-		zoneinfo:              "zoneinfo",
-		locale:                "locale",
-		phone_number:          "phone_number",
-		phone_number_verified: "phone_number_verified",
-		address:               "address",
-		updated_at:            "updated_at",
-		mfa_enabled:           "cognito:mfa_enabled",
+func readConfig() *config {
+	conf := &config{}
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if pair[0] == "filename" {
+			conf.filename = pair[1]
+		}
+		if pair[0] == "zebedee_user" {
+			conf.user = pair[1]
+		}
+		if pair[0] == "zebedee_pword" {
+			conf.pword = pair[1]
+		}
+		if pair[0] == "zebedee_host" {
+			conf.host = pair[1]
+		}
 	}
-	return header
+	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.filename == "" {
+		fmt.Println("Please set Environment Variables ")
+		os.Exit(1)
+	}
+
+	return conf
 }
-func convert_cognito_user_to_slice(input cognito_user) (output []string) {
-	output = []string{
+
+func convert_to_slice(input cognito_user) []string {
+	return []string{
 		input.username,
 		input.name,
 		input.given_name,
@@ -94,22 +120,6 @@ func convert_cognito_user_to_slice(input cognito_user) (output []string) {
 		input.updated_at,
 		input.mfa_enabled,
 	}
-	return output
-}
-
-func getUsers(zebCli zebedee.Client, s zebedee.Session) (userlist []zebedee.User, err error) {
-
-	userList, err := zebCli.GetUsers(s)
-
-	if err != nil {
-		fmt.Println("get users error!")
-		return nil, err
-	}
-
-	for _, user := range userList {
-		fmt.Println(user)
-	}
-	return userList, nil
 }
 
 func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
@@ -137,12 +147,13 @@ func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
 		csvline.mfa_enabled = "FALSE"
 		csvline.phone_number_verified = "FALSE"
 		csvline.email_verified = "TRUE"
-		if err := csvwriter.Write(convert_cognito_user_to_slice(csvline)); err != nil {
+		if err := csvwriter.Write(convert_to_slice(csvline)); err != nil {
 			fmt.Println("error writing record to csv:", err)
 		}
 	}
 }
 
+<<<<<<< HEAD:dp-identity-data-migration/userdataextraction/user_extraction.go
 func readConfig() config {
 	env_var := config{}
 	for _, e := range os.Environ() {
@@ -188,6 +199,11 @@ func main() {
 
 	conf := readConfig()
 
+=======
+func main() {
+
+	conf := readConfig()
+>>>>>>> master:dp-identity-data-migration/user_extraction.go
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
 	zebCli := zebedee.NewClient(conf.host, httpCli)
 
@@ -202,7 +218,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	userList, err := getUsers(zebCli, sess)
+	userList, err := zebCli.GetUsers(sess)
 
 	if err != nil {
 		fmt.Println("Theres been an issue")
@@ -217,15 +233,14 @@ func main() {
 	}
 	csvwriter := csv.NewWriter(csvfile)
 
-	header := populate_Header()
-	csvheader := convert_cognito_user_to_slice(header)
+	csvheader := convert_to_slice(header)
 	csvwriter.Write(csvheader)
 
 	process_zebedee_users(csvwriter, userList)
 
 	csvwriter.Flush()
 
-	fmt.Println(len(userList), csvwriter.Error())
+	fmt.Println("There are ", len(userList), "records extracted to file", conf.filename, "csv Errors ", csvwriter.Error())
 	csvfile.Close()
 
 	actualrowcount := readCsvFile(conf.filename) - 1
