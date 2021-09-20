@@ -19,8 +19,6 @@ type config struct {
 	pword,
 	user string
 }
-<<<<<<< HEAD:dp-identity-data-migration/userdataextraction/user_extraction.go
-=======
 
 var header = cognito_user{
 	username:              "cognito:username",
@@ -46,7 +44,6 @@ var header = cognito_user{
 	mfa_enabled:           "cognito:mfa_enabled",
 }
 
->>>>>>> master:dp-identity-data-migration/user_extraction.go
 type cognito_user struct {
 	username,
 	name,
@@ -153,57 +150,9 @@ func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
 	}
 }
 
-<<<<<<< HEAD:dp-identity-data-migration/userdataextraction/user_extraction.go
-func readConfig() config {
-	env_var := config{}
-	for _, e := range os.Environ() {
-		pair := strings.SplitN(e, "=", 2)
-		if pair[0] == "filename" {
-			env_var.filename = pair[1]
-		}
-		if pair[0] == "zebedee_user" {
-			env_var.user = pair[1]
-		}
-		if pair[0] == "zebedee_pword" {
-			env_var.pword = pair[1]
-		}
-		if pair[0] == "zebedee_host" {
-			env_var.host = pair[1]
-		}
-	}
-	if env_var.host == "" || env_var.pword == "" || env_var.user == "" || env_var.filename == "" {
-		fmt.Println("Please set Environment Variables ")
-		os.Exit(1)
-	}
-
-	return env_var
-}
-
-func readCsvFile(filePath string) int {
-	f, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println("Unable to read input file "+filePath, err)
-	}
-	defer f.Close()
-
-	csvReader := csv.NewReader(f)
-	records, err := csvReader.ReadAll()
-	if err != nil {
-		fmt.Println("Unable to parse file as CSV for "+filePath, err)
-	}
-
-	return len(records)
-}
-
 func main() {
 
 	conf := readConfig()
-
-=======
-func main() {
-
-	conf := readConfig()
->>>>>>> master:dp-identity-data-migration/user_extraction.go
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
 	zebCli := zebedee.NewClient(conf.host, httpCli)
 
@@ -237,23 +186,31 @@ func main() {
 	csvwriter.Write(csvheader)
 
 	process_zebedee_users(csvwriter, userList)
-
 	csvwriter.Flush()
 
-	fmt.Println("There are ", len(userList), "records extracted to file", conf.filename, "csv Errors ", csvwriter.Error())
-	csvfile.Close()
+	csvfile, err = os.Open(conf.filename)
 
-	actualrowcount := readCsvFile(conf.filename) - 1
-	if actualrowcount == len(userList) || csvwriter.Error() == nil {
-		fmt.Println(conf.filename)
-		fmt.Println("Expected row count: - ", len(userList))
-		fmt.Println("Actual row count: - ", actualrowcount)
-		fmt.Println("csv Errors ", csvwriter.Error())
-	} else {
-		fmt.Println(conf.filename)
+	if err != nil {
+		fmt.Printf("failed opening file: %s", err)
+	}
+
+	records, err := csv.NewReader(csvfile).ReadAll()
+	if err != nil {
+		fmt.Println("Theres been an issue")
+		fmt.Println(err)
+	}
+
+	actualRowCount := len(records) - 1
+
+	fmt.Println("========= ", conf.filename, "file validiation =============")
+	if actualRowCount != len(userList) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
-		fmt.Println("Expected row count: - ", len(userList))
-		fmt.Println("Actual row count: - ", actualrowcount)
 		fmt.Println("csv Errors ", csvwriter.Error())
 	}
+
+	fmt.Println("Expected row count: - ", len(userList))
+	fmt.Println("Actual row count: - ", actualRowCount)
+	fmt.Println("=========")
+
+	csvfile.Close()
 }
