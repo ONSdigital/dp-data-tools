@@ -186,10 +186,31 @@ func main() {
 	csvwriter.Write(csvheader)
 
 	process_zebedee_users(csvwriter, userList)
-
 	csvwriter.Flush()
 
-	fmt.Println("There are ", len(userList), "records extracted to file", conf.filename, "csv Errors ", csvwriter.Error())
-	csvfile.Close()
+	csvfile, err = os.Open(conf.filename)
 
+	if err != nil {
+		fmt.Printf("failed opening file: %s", err)
+	}
+
+	records, err := csv.NewReader(csvfile).ReadAll()
+	if err != nil {
+		fmt.Println("Theres been an issue")
+		fmt.Println(err)
+	}
+
+	actualRowCount := len(records) - 1
+
+	fmt.Println("========= ", conf.filename, "file validiation =============")
+	if actualRowCount != len(userList) || csvwriter.Error() != nil {
+		fmt.Println("There has been an error... ")
+		fmt.Println("csv Errors ", csvwriter.Error())
+	}
+
+	fmt.Println("Expected row count: - ", len(userList))
+	fmt.Println("Actual row count: - ", actualRowCount)
+	fmt.Println("=========")
+
+	csvfile.Close()
 }
