@@ -8,26 +8,38 @@ You will need different values (and possibly more env vars) than shown in the ex
 
 ## Queueing the message
 
-Queue the message 'locally' (using an ssh tunnel) or remotely (run the binary inside the environment).
+Queue the message _inside the environment_ (or - deprecated - _locally_ using an ssh tunnel).
+
+### Run in the environment
+
+To run the program inside the environment (change the values to suit):
+
+```shell
+$ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authoritay" VERSION="2"`
+# ...
+```
+
+If running in _production_ you will need to add `ENV=production` to `make` (default is `ENV=develop`)
+
+The above `make` does the following:
+
+- creates the secrets needed as a script (first asset)
+- builds the binary (second asset)
+- `dp scp` the assets onto the env
+- `dp ssh` onto the env to run the assets
+- cleans up on success
+  - if it fails, you should tidy up with: `make clean-deploy ENV=...`
 
 ### Run locally
 
-Either run locally:
+:warning: DEPRECATED. :warning:
+
+Alternatively, run locally:
 
 - ssh tunnel to kafka (if targeting a cloud environment)
-- edit the [Makefile](./Makefile) with the appropriate config (env vars), see the make target `all`
-- to queue the message
-  - `$ make`
 
-### Run in an environment
-
-Alternatively, to run the binary inside an environment:
-
-- build the binary (ensure the correct `GOOS` setting in the `Makefile` for the remote host)
-  - `$ make build`
-- push that binary to the env (this example is for `develop`)
-  - `$ dp scp develop publishing 2 generate-downloads .`
-- login to that host
-  - `$ dp ssh develop publishing 2`
-- on the remote host :warning:, queue the message
-  - `$ INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authoritay" VERSION="2" ./generate-downloads`
+```shell
+$ make run # same make vars as running in env above
+...
+$ make clean # clean up local files
+```
