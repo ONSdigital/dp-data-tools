@@ -20,6 +20,7 @@ Some of these tools require [dp-cli](https://github.com/ONSdigital/dp-cli).
 
 ### kafka related
 
+* [Drain a kafka topic of messages](./kafka-tools/drain-topic)
 * [Check audit messages have been added to kafka](./kafka-tools/check-audit)
 * [Queue a kafka message to rebuild full downloads for a dataset](./kafka-tools/generate-downloads)
 

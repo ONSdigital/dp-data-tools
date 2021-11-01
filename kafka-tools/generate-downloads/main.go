@@ -2,71 +2,104 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"encoding/json"
+	"strings"
 	"time"
+
+	"github.com/kelseyhightower/envconfig"
 
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
 	"github.com/ONSdigital/dp-dataset-api/schema"
-	kafka "github.com/ONSdigital/dp-kafka"
-
-	"github.com/kelseyhightower/envconfig"
+	kafka "github.com/ONSdigital/dp-kafka/v2"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
-type configuration struct {
-	DatasetID  string `envconfig:"DATASET_ID"`
-	InstanceID string `envconfig:"INSTANCE_ID"`
-	Edition    string `envconfig:"EDITION"`
-	Version    string `envconfig:"VERSION"`
+const KafkaTLSProtocolFlag = "TLS"
 
-	Timeout                time.Duration `envconfig:"TIMEOUT"`
-	KafkaAddr              []string      `envconfig:"KAFKA_ADDR"`
-	GenerateDownloadsTopic string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
+type Config struct {
+	DatasetID   string        `envconfig:"DATASET_ID"`
+	InstanceID  string        `envconfig:"INSTANCE_ID"`
+	Edition     string        `envconfig:"EDITION"`
+	Version     string        `envconfig:"VERSION"`
+	Timeout     time.Duration `envconfig:"TIMEOUT"`
+	KafkaConfig KafkaConfig
 }
 
-var defaultCfg = configuration{
-	KafkaAddr:              []string{"kafka-1:9092", "kafka-2:9092", "kafka-3:9092"},
-	GenerateDownloadsTopic: "filter-job-submitted",
-	Timeout:                30 * time.Second,
-	Edition:                "time-series",
+type KafkaConfig struct {
+	Brokers                []string `envconfig:"KAFKA_ADDR"`
+	Version                string   `envconfig:"KAFKA_VERSION"`
+	MaxBytes               int      `envconfig:"KAFKA_MAX_BYTES"`
+	SecProtocol            string   `envconfig:"KAFKA_SEC_PROTO"`
+	SecClientKey           string   `envconfig:"KAFKA_SEC_CLIENT_KEY"        json:"-"`
+	SecClientCert          string   `envconfig:"KAFKA_SEC_CLIENT_CERT"`
+	SecCACerts             string   `envconfig:"KAFKA_SEC_CA_CERTS"`
+	SecSkipVerify          bool     `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
+	GenerateDownloadsTopic string   `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
+}
+
+var defaultCfg = Config{
+	KafkaConfig: KafkaConfig{
+		Brokers:                []string{"kafka-1:9092", "kafka-2:9092", "kafka-3:9092"},
+		Version:                "1.0.2",
+		GenerateDownloadsTopic: "filter-job-submitted",
+	},
+	Timeout: 30 * time.Second,
+	Edition: "time-series",
 }
 
 func main() {
-
 	cfg := getConfig()
-	fmt.Printf("Config: %+v\n", cfg)
-
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+	log.Info(ctx, "Config", log.Data{"config": cfg})
+
 	pChannels := kafka.CreateProducerChannels()
+
+	pConfig := &kafka.ProducerConfig{
+		KafkaVersion:    &cfg.KafkaConfig.Version,
+		MaxMessageBytes: &cfg.KafkaConfig.MaxBytes,
+	}
+
+	if cfg.KafkaConfig.SecProtocol == KafkaTLSProtocolFlag {
+		log.Info(ctx, "Producer getting TLS")
+		pConfig.SecurityConfig = kafka.GetSecurityConfig(
+			cfg.KafkaConfig.SecCACerts,
+			cfg.KafkaConfig.SecClientCert,
+			cfg.KafkaConfig.SecClientKey,
+			cfg.KafkaConfig.SecSkipVerify,
+		)
+	}
 
 	// kafka may block, so do work in goroutine (cancel context when done)
 	go func() {
 		defer cancel()
 
-		prod, err := kafka.NewProducer(ctx, cfg.KafkaAddr, cfg.GenerateDownloadsTopic, 0, pChannels)
+		prod, err := kafka.NewProducer(ctx, cfg.KafkaConfig.Brokers, cfg.KafkaConfig.GenerateDownloadsTopic, pChannels, pConfig)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "NewProducer failed: %v\n", err)
+			log.Error(ctx, "NewProducer failed", err)
 			return
 		}
 		defer func() {
-			fmt.Println("closing producer...")
-			prod.Close(ctx)
-			fmt.Println("producer closed")
+			log.Info(ctx, "closing producer...")
+			if err := prod.Close(ctx); err != nil {
+				log.Error(ctx, "close failed", err)
+			}
+			log.Info(ctx, "producer closed")
 		}()
 		downloadGenerator := &download.Generator{
 			Producer:   adapter.NewProducerAdapter(prod),
 			Marshaller: schema.GenerateDownloadsEvent,
 		}
 
-		fmt.Println("waiting for kafka initialisation...")
+		log.Info(ctx, "waiting for kafka initialisation...")
 		select {
 		case <-ctx.Done():
 			return
-		case <-pChannels.Init:
+		case <-pChannels.Ready:
 		}
-		fmt.Println("kafka initialised")
-		tmr := time.NewTimer(1 * time.Second) // settle time seems necessary
+		log.Info(ctx, "kafka initialised")
+
+		tmr := time.NewTimer(4 * time.Second) // settle time seems necessary
 		select {
 		case <-ctx.Done():
 			tmr.Stop()
@@ -74,14 +107,14 @@ func main() {
 		case <-tmr.C:
 		}
 
-		fmt.Println("message send...")
+		log.Info(ctx, "message send...")
 		if err = downloadGenerator.Generate(ctx, cfg.DatasetID, cfg.InstanceID, cfg.Edition, cfg.Version); err != nil {
-			fmt.Fprintf(os.Stderr, "Generate failed: %v\n", err)
+			log.Error(ctx, "Generate failed", err)
 			return
 		}
 
-		fmt.Println("message sent, pausing...")
-		tmr2 := time.NewTimer(15 * time.Second) // pause before closing, necessary to allow message to depart
+		log.Info(ctx, "message sent, pausing...")
+		tmr2 := time.NewTimer(3 * time.Second) // pause before closing, necessary to allow message to depart
 		select {
 		case <-ctx.Done():
 			tmr2.Stop()
@@ -94,19 +127,24 @@ func main() {
 	select {
 	case err := <-pChannels.Errors:
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "producer error: %s\n", err)
+			log.Error(ctx, "producer error", err)
+		} else {
+			log.Info(ctx, "Errors chan closed")
 		}
 		cancel()
 	case <-ctx.Done():
+		log.Info(ctx, "context has gone")
 		if err := ctx.Err(); err != nil && err != context.Canceled {
 			panic(err)
 		}
 	}
-	fmt.Println("done")
+	log.Info(ctx, "2s pause...")
+	time.Sleep(2 * time.Second)
+	log.Info(ctx, "done")
 }
 
-func getConfig() (cfg *configuration) {
-	cfg = &configuration{}
+func getConfig() (cfg *Config) {
+	cfg = &Config{}
 	*cfg = defaultCfg
 
 	if err := envconfig.Process("", cfg); err != nil {
@@ -124,5 +162,17 @@ func getConfig() (cfg *configuration) {
 	if cfg.Version == "" {
 		panic("no version")
 	}
+	if cfg.KafkaConfig.SecProtocol != "" {
+		if cfg.KafkaConfig.SecProtocol != KafkaTLSProtocolFlag {
+			panic("bad kafka sec proto - expected: " + KafkaTLSProtocolFlag)
+		}
+		cfg.KafkaConfig.SecClientCert = strings.Replace(cfg.KafkaConfig.SecClientCert, "\\n", "\n", -1)
+		cfg.KafkaConfig.SecClientKey = strings.Replace(cfg.KafkaConfig.SecClientKey, "\\n", "\n", -1)
+	}
 	return
+}
+
+func (config Config) String() string {
+	jsonStr, _ := json.Marshal(config)
+	return string(jsonStr)
 }
