@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# ensure_vars
+#
+# is run by drain-topic/Makefile when the (cert) vars file does not exist
+# ($VARS_SH from key-admin), so
+#
+# - first, it tries the simplest option of getting vars for $CERT_APP
+#   from its dp-configs...$SECRETS_JSON (decrypting if necessary)
+# - but if that turns out to be a Java app (wrong format of cert for go),
+#   then it will suggest to run key-admin to create $VARS_SH from the cert
+
+set -euo pipefail
+
+function fail() {
+	local line
+	for line; do echo "$line" >&2; done
+	exit 2
+}
+
+####
+
+# try secrets first, it's less error prone
+
+if [[ ! -f "$SECRETS_JSON" && -f "$SECRETS_JSON.asc" ]]; then
+	echo "Decrypting $SECRETS_JSON.asc"
+	if ! gpg -do "$SECRETS_JSON" "$SECRETS_JSON.asc"; then
+		fail "Cannot decrypt: $SECRETS_JSON.asc"
+	fi
+fi
+
+if [[ -f "$SECRETS_JSON" ]] && jq -e '.KAFKA_SEC_CLIENT_CERT' "$SECRETS_JSON" > /dev/null; then
+	# $SECRETS_JSON has var we need, rejoice, end here with success
+	echo "Using cert from $SECRETS_JSON"
+	exit 0
+fi
+
+
+# cert not in secrets (at least not in right var/format)
+#   so we now try to create vars from cert:
+
+[[ -d "$DP_SETUP" ]] || fail "Cannot find 'dp-setup' at: $DP_SETUP"
+
+[[ -f "$ARN_FILE" ]] || fail "Your 'dp-setup' does not have the cert we need:" \
+				"Need this file: $ARN_FILE" \
+				"You may need to run: cd $DP_SETUP && git pull" \
+				"Then return here to re-try."
+
+echo "drain-topic needs to auth to kafka with the client certificate for $CERT_APP."
+echo "You need to generate the vars needed, from the existing cert for $CERT_APP"
+echo "Please run:"
+echo "  cd '$KEY_ADMIN_DIR' && ./scripts/key-admin --$ENV --${SUBNET,,} '$CERT_APP'"
+echo "Then return here to re-try."
+exit 2
