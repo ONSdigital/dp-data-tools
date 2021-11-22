@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"strings"
 
 	"os"
@@ -10,14 +13,22 @@ import (
 	"time"
 
 	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
-	"github.com/google/uuid"
+	uuid "github.com/google/uuid"
 )
 
 type config struct {
-	filename,
-	host,
-	pword,
-	user string
+	validUsersFileName, invalidUsersFileName, host, pword, user string
+	emailDomains                                                []string
+	s3Bucket, s3BaseDir, s3Region string
+}
+
+func (c config) getS3ValidUsersFilePath()string{
+	return  fmt.Sprintf("%s%s", c.s3BaseDir, c.validUsersFileName)
+}
+
+
+func (c config) getS3InValidUsersFilePath()string{
+	return  fmt.Sprintf("%s%s", c.s3BaseDir, c.invalidUsersFileName)
 }
 
 var header = cognito_user{
@@ -73,7 +84,8 @@ func readConfig() *config {
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
 		if pair[0] == "filename" {
-			conf.filename = pair[1]
+			conf.validUsersFileName = pair[1]
+			conf.invalidUsersFileName = fmt.Sprintf("invalid_%s",pair[1])
 		}
 		if pair[0] == "zebedee_user" {
 			conf.user = pair[1]
@@ -84,8 +96,20 @@ func readConfig() *config {
 		if pair[0] == "zebedee_host" {
 			conf.host = pair[1]
 		}
+		if pair[0] == "email_domains" {
+			conf.emailDomains = strings.Split(pair[1], ",")
+		}
+		if pair[0] == "s3_bucket" {
+			conf.s3Bucket = pair[1]
+		}
+		if pair[0] == "s3_base_dir" {
+			conf.s3BaseDir = pair[1]
+		}
+		if pair[0] == "s3_region" {
+			conf.s3Region = pair[1]
+		}
 	}
-	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.filename == "" {
+	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.validUsersFileName == "" {
 		fmt.Println("Please set Environment Variables ")
 		os.Exit(1)
 	}
@@ -119,8 +143,10 @@ func convert_to_slice(input cognito_user) []string {
 	}
 }
 
-func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
-	for _, user := range userlist {
+func process_zebedee_users(validUsersWriter *csv.Writer, invalidUsersWriter *csv.Writer, userList []zebedee.User, validEmailDomains []string) (int, int) {
+	var validUsersCount, invalidUsersCount int
+
+	for _, user := range userList {
 		var (
 			csvline cognito_user
 		)
@@ -144,10 +170,54 @@ func process_zebedee_users(csvwriter *csv.Writer, userlist []zebedee.User) {
 		csvline.mfa_enabled = "FALSE"
 		csvline.phone_number_verified = "FALSE"
 		csvline.email_verified = "TRUE"
-		if err := csvwriter.Write(convert_to_slice(csvline)); err != nil {
-			fmt.Println("error writing record to csv:", err)
+
+		if isValidEmail := validateEmailId(validEmailDomains, user.Email); isValidEmail {
+			if err := validUsersWriter.Write(convert_to_slice(csvline)); err != nil {
+				fmt.Println("error writing record to csv:", err)
+			}else {
+				validUsersCount += 1
+			}
+		} else {
+			if err := invalidUsersWriter.Write(convert_to_slice(csvline)); err != nil {
+				fmt.Println("error writing record to csv:", err)
+			}else {
+				invalidUsersCount += 1
+			}
 		}
 	}
+	return validUsersCount, invalidUsersCount
+}
+
+func validateEmailId(validEmailDomains []string, emailID string) bool {
+	domainName := strings.Split(emailID, "@")[1]
+	for _, domain := range validEmailDomains {
+		if strings.Contains(domain, domainName) {
+			return true
+		}
+	}
+	return false
+}
+
+func uploadFile(fileName , s3Bucket, s3FilePath, region string) error {
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+
+	uploader := s3manager.NewUploader(sess)
+
+	f, err := os.Open(fileName)
+	if err != nil {
+		return fmt.Errorf("failed to open file %q, %+v", fileName, err)
+	}
+
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(s3Bucket),
+		Key:    aws.String(s3FilePath),
+		Body:   f,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upload file, %+v", err)
+	}
+	fmt.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
+	return nil
 }
 
 func main() {
@@ -175,42 +245,48 @@ func main() {
 		os.Exit(1)
 	}
 
-	csvfile, err := os.Create(conf.filename)
+	validUsersFile := createFile(conf.validUsersFileName)
+	validUsersWriter := csv.NewWriter(validUsersFile)
+
+	invalidUsersFile := createFile(conf.invalidUsersFileName)
+	invalidUsersWriter := csv.NewWriter(invalidUsersFile)
+
+	csvheader := convert_to_slice(header)
+	validUsersWriter.Write(csvheader)
+	invalidUsersWriter.Write(csvheader)
+
+	validUsersCount, invalidUsersCount := process_zebedee_users(validUsersWriter, invalidUsersWriter, userList, conf.emailDomains)
+	validUsersWriter.Flush()
+	invalidUsersWriter.Flush()
+
+	fmt.Println("========= file validiation =============")
+	if validUsersCount+invalidUsersCount  != len(userList) || validUsersWriter.Error() != nil  || invalidUsersWriter.Error() != nil {
+		fmt.Println("There has been an error... ")
+		fmt.Println("valid users writer Errors ", validUsersWriter.Error())
+		fmt.Println("invalid users writer Errors ", validUsersWriter.Error())
+	}
+
+	fmt.Println("Expected row count: - ", len(userList))
+	fmt.Println("Valid users row count: - ", validUsersCount)
+	fmt.Println("Invalid users row count: - ", invalidUsersCount)
+	fmt.Println("=========")
+
+	validUsersFile.Close()
+	invalidUsersFile.Close()
+
+
+	fmt.Println("========= Uploading valid users file to S3 =============")
+	err = uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.getS3ValidUsersFilePath(), conf.s3Region)
+	fmt.Printf("%+v", err)
+	//uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.getS3InValidUsersFilePath())
+
+}
+
+func createFile(fileName string) *os.File {
+	csvFile, err := os.Create(fileName)
 	if err != nil {
 		fmt.Printf("failed creating file: %s", err)
 		os.Exit(1)
 	}
-	csvwriter := csv.NewWriter(csvfile)
-
-	csvheader := convert_to_slice(header)
-	csvwriter.Write(csvheader)
-
-	process_zebedee_users(csvwriter, userList)
-	csvwriter.Flush()
-
-	csvfile, err = os.Open(conf.filename)
-
-	if err != nil {
-		fmt.Printf("failed opening file: %s", err)
-	}
-
-	records, err := csv.NewReader(csvfile).ReadAll()
-	if err != nil {
-		fmt.Println("Theres been an issue")
-		fmt.Println(err)
-	}
-
-	actualRowCount := len(records) - 1
-
-	fmt.Println("========= ", conf.filename, "file validiation =============")
-	if actualRowCount != len(userList) || csvwriter.Error() != nil {
-		fmt.Println("There has been an error... ")
-		fmt.Println("csv Errors ", csvwriter.Error())
-	}
-
-	fmt.Println("Expected row count: - ", len(userList))
-	fmt.Println("Actual row count: - ", actualRowCount)
-	fmt.Println("=========")
-
-	csvfile.Close()
+	return csvFile
 }
