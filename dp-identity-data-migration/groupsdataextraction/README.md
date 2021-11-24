@@ -38,6 +38,9 @@ two terminal windows are required  one for the tunnel, another to run extracts
     export zebedee_host=\<local "http://localhost:8082"; otherwise "http://localhost:10050">
     export groups_filename=<full path to file>
     export groupusers_filename=<full path to file>
+    export s3_base_dir=<S3 base directory>
+    export s3_bucket=<S3 bucket name>
+    export s3_region=<S3 bucket region>
 
 4. Run the code....
    ``` shell

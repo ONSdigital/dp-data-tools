@@ -214,7 +214,7 @@ func uploadFile(fileName , s3Bucket, s3FilePath, region string) error {
 		Body:   f,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to upload file, %+v", err)
+		return fmt.Errorf("failed to upload file: %+v", err)
 	}
 	fmt.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
 	return nil
@@ -276,9 +276,10 @@ func main() {
 
 
 	fmt.Println("========= Uploading valid users file to S3 =============")
-	err = uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.getS3ValidUsersFilePath(), conf.s3Region)
-	fmt.Printf("%+v", err)
-	//uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.getS3InValidUsersFilePath())
+	uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.getS3ValidUsersFilePath(), conf.s3Region)
+	uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.getS3InValidUsersFilePath(), conf.s3Region)
+	fmt.Println("========= Uploaded fules to S3 =============")
+
 
 }
 

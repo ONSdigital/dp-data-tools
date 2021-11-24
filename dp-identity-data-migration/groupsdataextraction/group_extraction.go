@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"os"
 	"strings"
 
@@ -16,7 +19,18 @@ type config struct {
 	groupUsersFilename,
 	host,
 	pword,
-	user string
+	user,
+	s3Bucket,
+	s3BaseDir,
+	s3Region string
+}
+
+func (c config) getS3GroupsFilePath() string {
+	return fmt.Sprintf("%s%s", c.s3BaseDir, c.groupsFilename)
+}
+
+func (c config) getS3GroupUsersFilePath() string {
+	return fmt.Sprintf("%s%s", c.s3BaseDir, c.groupUsersFilename)
 }
 
 func readConfig() (conf config) {
@@ -39,6 +53,15 @@ func readConfig() (conf config) {
 		}
 		if pair[0] == "zebedee_host" {
 			conf.host = pair[1]
+		}
+		if pair[0] == "s3_bucket" {
+			conf.s3Bucket = pair[1]
+		}
+		if pair[0] == "s3_base_dir" {
+			conf.s3BaseDir = pair[1]
+		}
+		if pair[0] == "s3_region" {
+			conf.s3Region = pair[1]
 		}
 	}
 
@@ -99,6 +122,28 @@ func convertToSlice_UserGroup(input userGroupCSV) []string {
 		input.Username,
 		input.Groups,
 	}
+}
+
+func uploadFile(fileName , s3Bucket, s3FilePath, region string) error {
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+
+	uploader := s3manager.NewUploader(sess)
+
+	f, err := os.Open(fileName)
+	if err != nil {
+		return fmt.Errorf("failed to open file %q, %+v", fileName, err)
+	}
+
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(s3Bucket),
+		Key:    aws.String(s3FilePath),
+		Body:   f,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upload file, %+v", err)
+	}
+	fmt.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
+	return nil
 }
 
 func main() {
@@ -162,6 +207,11 @@ func main() {
 	csvwriter.Flush()
 	groupsCSVFile.Close()
 
+	fmt.Println("Uploading", conf.groupsFilename, "to s3")
+
+	uploadFile(conf.groupsFilename, conf.s3Bucket, conf.getS3GroupsFilePath(), conf.s3Region)
+
+	fmt.Println("Uploaded", conf.groupsFilename, "to s3")
 	// UserGroups part...
 
 	tmpUserGroups := make(map[string][]string)
@@ -225,7 +275,7 @@ func main() {
 
 	records, _ = csv.NewReader(usergroupsCSVFile).ReadAll()
 	actualRowCount = len(records)
-	fmt.Println("========= ", conf.groupUsersFilename, "file validiation =============")
+	fmt.Println("========= ", conf.groupUsersFilename, "file validation =============")
 	if actualRowCount != len(userList) || csvwriter.Error() != nil {
 		fmt.Println("There has been an error... ")
 		fmt.Println("csv Errors ", csvwriter.Error())
@@ -237,4 +287,11 @@ func main() {
 
 	csvwriter.Flush()
 	usergroupsCSVFile.Close()
+
+	fmt.Println("Uploading", conf.groupUsersFilename, "to s3")
+
+	uploadFile(conf.groupUsersFilename, conf.s3Bucket, conf.getS3GroupUsersFilePath(), conf.s3Region)
+
+	fmt.Println("Uploaded", conf.groupUsersFilename, "to s3")
+
 }

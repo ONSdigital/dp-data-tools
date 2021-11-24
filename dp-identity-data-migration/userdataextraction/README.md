@@ -4,7 +4,7 @@
 When we put the new auth service live we will need to migrate all users from the existing login mechanism (zebedee) to the new identity API. In order to do this we will need a scripted and reliable approach to exporting the users from zebedee.
 
 ##What
-nvestigate export of all users and transformation to the format required here: Creating the User Import .csv File - Amazon Cognito
+Investigate export of all users and transformation to the format required here: Creating the User Import .csv File - Amazon Cognito
 We should likely validate the users' emails are @ons.gov.uk or @ext.ons.gov.uk emails and write these out to a separate list for admin review (but this is more of an implementation detail than spike one)
 We are going to need to split the names to first and last as best as we can (does not need to be perfect as admin can fix any issues later, but we should consider if the email field can help with this at all) (but again this is probably more of an implementation detail)
 
@@ -31,6 +31,10 @@ two terminal windows are required  one for the tunnel, another to run extracts
     export zebedee_pword=<zebedee user password for environment>
     export zebedee_host=\<local "http://localhost:8082"; otherwise "http://localhost:10050">
     export filename=<full path to file>
+    export s3_base_dir=<S3 base directory>
+    export s3_bucket=<S3 bucket name>
+    export s3_region=<S3 bucket region>
+    export email_domains=<comma separated valid email domain ex: ons.com>
 
 4. Run the code....
    ``` shell
@@ -47,8 +51,8 @@ Actual row count: -  112
 ```
 
 ####Files
-This script creates 1 csv files 
-####groups csv 
+This script creates 2 csv files onw with users with valid emailIds and other with invalid users 
+#### csv file format 
 cognito:username | name | given_name | family_name | middle_name | nickname | preferred_username | profile	picture | website | email | email_verified | gender | birthdate | zoneinfo | locale | phone_number | phone_number_verified | address | updated_at | cognito:mfa_enabled
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 uudi | --- | from email if expected format | from email if expected format | --- | --- | --- | --- | --- | email | true | --- | --- | --- | --- | --- | false | --- | --- | false 
