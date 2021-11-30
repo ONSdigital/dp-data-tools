@@ -13,7 +13,7 @@ import (
 
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/avro"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 // AuditEvent represents the structure of the audit message received
@@ -88,7 +88,7 @@ func main() {
 	// Validate
 	if kafkaBrokers == "" {
 		err := errors.New("missing kafka brokers, must be comma separated")
-		log.Event(ctx, "", log.ERROR, log.Error(err), log.Data{"kafka_brokers": kafkaBrokers})
+		log.Error(ctx, "", err, log.Data{"kafka_brokers": kafkaBrokers})
 		return
 	}
 	kafkaBrokerList := strings.Split(kafkaBrokers, ",")
@@ -99,7 +99,7 @@ func main() {
 	consumer, err := kafka.NewConsumerGroup(
 		ctx, kafkaBrokerList, topic, consumerGroup, cgChannels, cgConfig)
 	if err != nil {
-		log.Event(ctx, "[KAFKA-TEST] Fatal error creating consumer.", log.FATAL, log.Error(err))
+		log.Fatal(ctx, "[KAFKA-TEST] Fatal error creating consumer.", err)
 		os.Exit(1)
 	}
 
@@ -113,18 +113,18 @@ func main() {
 		case message := <-consumer.Channels().Upstream:
 			event, err := readMessage(message.GetData())
 			if err != nil {
-				log.Event(ctx, "", log.ERROR, log.Error(err), log.Data{"schema": "failed to unmarshal event"})
+				log.Error(ctx, "", err, log.Data{"schema": "failed to unmarshal event"})
 				break
 			}
 
 			createdAtTime := event.CreatedAtTime()
-			log.Event(ctx, "received message", log.INFO, log.Data{"audit_event": event, "created_at_time": createdAtTime})
+			log.Info(ctx, "received message", log.Data{"audit_event": event, "created_at_time": createdAtTime})
 
 			addResult(paths, event)
 
 			message.Commit()
 		case <-signals:
-			log.Event(ctx, "audit stats", log.INFO, log.Data{"audit": paths})
+			log.Info(ctx, "audit stats", log.Data{"audit": paths})
 			os.Exit(0)
 		}
 	}
