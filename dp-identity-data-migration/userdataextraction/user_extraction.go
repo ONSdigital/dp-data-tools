@@ -19,16 +19,15 @@ import (
 type config struct {
 	validUsersFileName, invalidUsersFileName, host, pword, user string
 	emailDomains                                                []string
-	s3Bucket, s3BaseDir, s3Region string
+	s3Bucket, s3BaseDir, s3Region                               string
 }
 
-func (c config) getS3ValidUsersFilePath()string{
-	return  fmt.Sprintf("%s%s", c.s3BaseDir, c.validUsersFileName)
+func (c config) getS3ValidUsersFilePath() string {
+	return fmt.Sprintf("%s%s", c.s3BaseDir, c.validUsersFileName)
 }
 
-
-func (c config) getS3InValidUsersFilePath()string{
-	return  fmt.Sprintf("%s%s", c.s3BaseDir, c.invalidUsersFileName)
+func (c config) getS3InValidUsersFilePath() string {
+	return fmt.Sprintf("%s%s", c.s3BaseDir, c.invalidUsersFileName)
 }
 
 var header = cognito_user{
@@ -83,29 +82,23 @@ func readConfig() *config {
 	conf := &config{}
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
-		if pair[0] == "filename" {
+		switch pair[0] {
+		case "filename":
 			conf.validUsersFileName = pair[1]
-			conf.invalidUsersFileName = fmt.Sprintf("invalid_%s",pair[1])
-		}
-		if pair[0] == "zebedee_user" {
+			conf.invalidUsersFileName = fmt.Sprintf("invalid_%s", pair[1])
+		case "zebedee_user":
 			conf.user = pair[1]
-		}
-		if pair[0] == "zebedee_pword" {
+		case "zebedee_pword":
 			conf.pword = pair[1]
-		}
-		if pair[0] == "zebedee_host" {
+		case "zebedee_host":
 			conf.host = pair[1]
-		}
-		if pair[0] == "email_domains" {
+		case "email_domains":
 			conf.emailDomains = strings.Split(pair[1], ",")
-		}
-		if pair[0] == "s3_bucket" {
+		case "s3_bucket":
 			conf.s3Bucket = pair[1]
-		}
-		if pair[0] == "s3_base_dir" {
+		case "s3_base_dir":
 			conf.s3BaseDir = pair[1]
-		}
-		if pair[0] == "s3_region" {
+		case "s3_region":
 			conf.s3Region = pair[1]
 		}
 	}
@@ -171,16 +164,17 @@ func process_zebedee_users(validUsersWriter *csv.Writer, invalidUsersWriter *csv
 		csvline.phone_number_verified = "FALSE"
 		csvline.email_verified = "TRUE"
 
-		if isValidEmail := validateEmailId(validEmailDomains, user.Email); isValidEmail {
-			if err := validUsersWriter.Write(convert_to_slice(csvline)); err != nil {
+		userDetails := convert_to_slice(csvline)
+		if validateEmailId(validEmailDomains, user.Email) {
+			if err := validUsersWriter.Write(userDetails); err != nil {
 				fmt.Println("error writing record to csv:", err)
-			}else {
+			} else {
 				validUsersCount += 1
 			}
 		} else {
-			if err := invalidUsersWriter.Write(convert_to_slice(csvline)); err != nil {
+			if err := invalidUsersWriter.Write(userDetails); err != nil {
 				fmt.Println("error writing record to csv:", err)
-			}else {
+			} else {
 				invalidUsersCount += 1
 			}
 		}
@@ -189,16 +183,18 @@ func process_zebedee_users(validUsersWriter *csv.Writer, invalidUsersWriter *csv
 }
 
 func validateEmailId(validEmailDomains []string, emailID string) bool {
-	domainName := strings.Split(emailID, "@")[1]
-	for _, domain := range validEmailDomains {
-		if strings.Contains(domain, domainName) {
-			return true
+	if strings.Contains(emailID, "@") {
+		domainName := strings.Split(emailID, "@")[1]
+		for _, domain := range validEmailDomains {
+			if domain == domainName {
+				return true
+			}
 		}
 	}
 	return false
 }
 
-func uploadFile(fileName , s3Bucket, s3FilePath, region string) error {
+func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
 
 	uploader := s3manager.NewUploader(sess)
@@ -260,7 +256,7 @@ func main() {
 	invalidUsersWriter.Flush()
 
 	fmt.Println("========= file validiation =============")
-	if validUsersCount+invalidUsersCount  != len(userList) || validUsersWriter.Error() != nil  || invalidUsersWriter.Error() != nil {
+	if validUsersCount+invalidUsersCount != len(userList) || validUsersWriter.Error() != nil || invalidUsersWriter.Error() != nil {
 		fmt.Println("There has been an error... ")
 		fmt.Println("valid users writer Errors ", validUsersWriter.Error())
 		fmt.Println("invalid users writer Errors ", validUsersWriter.Error())
@@ -274,12 +270,10 @@ func main() {
 	validUsersFile.Close()
 	invalidUsersFile.Close()
 
-
 	fmt.Println("========= Uploading valid users file to S3 =============")
 	uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.getS3ValidUsersFilePath(), conf.s3Region)
 	uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.getS3InValidUsersFilePath(), conf.s3Region)
 	fmt.Println("========= Uploaded fules to S3 =============")
-
 
 }
 

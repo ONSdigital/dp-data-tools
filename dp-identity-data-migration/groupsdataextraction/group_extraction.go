@@ -33,34 +33,26 @@ func (c config) getS3GroupUsersFilePath() string {
 	return fmt.Sprintf("%s%s", c.s3BaseDir, c.groupUsersFilename)
 }
 
-func readConfig() (conf config) {
+func readConfig() *config {
+	conf := &config{}
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
-
-		if pair[0] == "groups_filename" {
+		switch pair[0] {
+		case "groups_filename":
 			conf.groupsFilename = pair[1]
-		}
-
-		if pair[0] == "groupusers_filename" {
+		case "groupusers_filename":
 			conf.groupUsersFilename = pair[1]
-		}
-
-		if pair[0] == "zebedee_user" {
+		case "zebedee_user":
 			conf.user = pair[1]
-		}
-		if pair[0] == "zebedee_pword" {
+		case "zebedee_pword":
 			conf.pword = pair[1]
-		}
-		if pair[0] == "zebedee_host" {
+		case "zebedee_host":
 			conf.host = pair[1]
-		}
-		if pair[0] == "s3_bucket" {
+		case "s3_bucket":
 			conf.s3Bucket = pair[1]
-		}
-		if pair[0] == "s3_base_dir" {
+		case "s3_base_dir":
 			conf.s3BaseDir = pair[1]
-		}
-		if pair[0] == "s3_region" {
+		case "s3_region":
 			conf.s3Region = pair[1]
 		}
 	}
@@ -124,7 +116,7 @@ func convertToSlice_UserGroup(input userGroupCSV) []string {
 	}
 }
 
-func uploadFile(fileName , s3Bucket, s3FilePath, region string) error {
+func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
 
 	uploader := s3manager.NewUploader(sess)

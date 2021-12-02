@@ -51,7 +51,7 @@ Actual row count: -  112
 ```
 
 ####Files
-This script creates 2 csv files onw with users with valid emailIds and other with invalid users 
+This script creates 2 csv files one with users with valid emailIds and other with invalid users 
 #### csv file format 
 cognito:username | name | given_name | family_name | middle_name | nickname | preferred_username | profile	picture | website | email | email_verified | gender | birthdate | zoneinfo | locale | phone_number | phone_number_verified | address | updated_at | cognito:mfa_enabled
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
