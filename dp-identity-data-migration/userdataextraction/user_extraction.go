@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"strconv"
 	"strings"
 
 	"os"
@@ -43,6 +44,7 @@ var header = cognito_user{
 	website:               "website",
 	email:                 "email",
 	email_verified:        "email_verified",
+	active:                "active",
 	gender:                "gender",
 	birthdate:             "birthdate",
 	zoneinfo:              "zoneinfo",
@@ -67,6 +69,7 @@ type cognito_user struct {
 	website,
 	email,
 	email_verified,
+	active,
 	gender,
 	birthdate,
 	zoneinfo,
@@ -124,6 +127,7 @@ func convert_to_slice(input cognito_user) []string {
 		input.website,
 		input.email,
 		input.email_verified,
+		input.active,
 		input.gender,
 		input.birthdate,
 		input.zoneinfo,
@@ -145,6 +149,7 @@ func process_zebedee_users(validUsersWriter *csv.Writer, invalidUsersWriter *csv
 		)
 		csvline.username = uuid.NewString()
 		csvline.email = user.Email
+		csvline.active = strconv.FormatBool(!user.Inactive)
 
 		domain := strings.Split(user.Email, "@")
 		names := strings.Split(domain[0], ".")
