@@ -15,19 +15,17 @@ Queue the message _inside the environment_ (or - deprecated - _locally_ using an
 To run the program inside the environment (change the values to suit):
 
 ```shell
-$ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authoritay" VERSION="2"`
+$ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authoritay" VERSION=2 EDITION=2021 ENV=production
 # ...
 ```
 
-If running in _production_ you will need to add `ENV=production` to `make` (default is `ENV=develop`)
-
 The above `make` does the following:
 
-- creates the secrets needed as a script (first asset)
+- creates a script with the required secrets (auth to MSK) (first asset)
 - builds the binary (second asset)
 - `dp scp` the assets onto the env
 - `dp ssh` onto the env to run the assets
-- cleans up on success
+- cleans up (the env) on success
   - if it fails, you should tidy up with: `make clean-deploy ENV=...`
 
 ### Run locally

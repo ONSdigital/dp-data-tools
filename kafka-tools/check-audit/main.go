@@ -1,19 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
-	"flag"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-kafka/v2/avro"
 	"github.com/ONSdigital/log.go/v2/log"
+	"github.com/kelseyhightower/envconfig"
 )
 
 // AuditEvent represents the structure of the audit message received
@@ -69,35 +69,48 @@ const (
 	consumerGroup = "check-audit"
 )
 
-const (
-	attempted    = "attempted"
-	successful   = "successful"
-	unsuccessful = "unsuccessful"
-)
-
-var kafkaBrokers string
-var kafkaVersion = "1.0.2"
+type Config struct {
+	Brokers       []string `envconfig:"KAFKA_ADDR"`
+	Version       string   `envconfig:"KAFKA_VERSION"`
+	SecProtocol   string   `envconfig:"KAFKA_SEC_PROTO"`
+	SecCACerts    string   `envconfig:"KAFKA_SEC_CA_CERTS"`
+	SecClientCert string   `envconfig:"KAFKA_SEC_CLIENT_CERT"`
+	SecClientKey  string   `envconfig:"KAFKA_SEC_CLIENT_KEY"   json:"-"`
+	SecSkipVerify bool     `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
+}
 
 func main() {
 
 	// Get context and parse input
 	ctx := context.Background()
-	flag.StringVar(&kafkaBrokers, "kafka-brokers", kafkaBrokers, "kafka broker addresses, comma separated")
-	flag.Parse()
-
+	cfg := &Config{
+		Brokers: []string{"localhost:9092", "localhost:9093", "localhost:9094"},
+		Version: "1.0.2",
+	}
+	if err := envconfig.Process("", cfg); err != nil {
+		log.Fatal(ctx, "need yaml filepath as argument", err)
+		os.Exit(1)
+	}
 	// Validate
-	if kafkaBrokers == "" {
+	if len(cfg.Brokers) == 0 {
 		err := errors.New("missing kafka brokers, must be comma separated")
-		log.Error(ctx, "", err, log.Data{"kafka_brokers": kafkaBrokers})
+		log.Error(ctx, "", err, log.Data{"kafka_brokers": cfg.Brokers})
 		return
 	}
-	kafkaBrokerList := strings.Split(kafkaBrokers, ",")
 
 	// Create Consumer with channels
 	cgChannels := kafka.CreateConsumerGroupChannels(1)
-	cgConfig := &kafka.ConsumerGroupConfig{KafkaVersion: &kafkaVersion}
-	consumer, err := kafka.NewConsumerGroup(
-		ctx, kafkaBrokerList, topic, consumerGroup, cgChannels, cgConfig)
+	cgConfig := &kafka.ConsumerGroupConfig{KafkaVersion: &cfg.Version}
+
+	if cfg.SecProtocol == "TLS" {
+		cgConfig.SecurityConfig = kafka.GetSecurityConfig(
+			cfg.SecCACerts,
+			cfg.SecClientCert,
+			cfg.SecClientKey,
+			cfg.SecSkipVerify,
+		)
+	}
+	consumer, err := kafka.NewConsumerGroup(ctx, cfg.Brokers, topic, consumerGroup, cgChannels, cgConfig)
 	if err != nil {
 		log.Fatal(ctx, "[KAFKA-TEST] Fatal error creating consumer.", err)
 		os.Exit(1)
@@ -105,7 +118,14 @@ func main() {
 
 	// OS Signals channel
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	waitForEnterChan := make(chan struct{}, 1)
+	go func() {
+		reader := bufio.NewReader(os.Stdin)
+		reader.ReadString('\n')
+		close(waitForEnterChan)
+	}()
 
 	paths := make(map[string]Action)
 	for {
@@ -123,9 +143,11 @@ func main() {
 			addResult(paths, event)
 
 			message.Commit()
-		case <-signals:
+		case <-waitForEnterChan:
 			log.Info(ctx, "audit stats", log.Data{"audit": paths})
 			os.Exit(0)
+		case <-signals:
+			os.Exit(1)
 		}
 	}
 }

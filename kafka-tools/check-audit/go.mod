@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/ONSdigital/dp-kafka/v2 v2.4.2
 	github.com/ONSdigital/log.go/v2 v2.0.9
+	github.com/kelseyhightower/envconfig v1.4.0
 )
 
 require (

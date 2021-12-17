@@ -86,9 +86,9 @@ func main() {
 			}
 			log.Info(ctx, "producer closed")
 		}()
-		downloadGenerator := &download.Generator{
+		downloadGenerator := &download.CMDGenerator{
 			Producer:   adapter.NewProducerAdapter(prod),
-			Marshaller: schema.GenerateDownloadsEvent,
+			Marshaller: schema.GenerateCMDDownloadsEvent,
 		}
 
 		log.Info(ctx, "waiting for kafka initialisation...")

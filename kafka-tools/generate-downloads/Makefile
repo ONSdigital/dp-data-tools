@@ -3,13 +3,14 @@
 SHELL=bash
 APP=generate-downloads
 
+ENV?=develop
 INSTANCE_ID?=8e4b7e60-1136-4da4-bcb8-479c71a4aafc
 DATASET_ID?=uk-spending-on-cards
 EDITION?=time-series
 VERSION?=1
+
 TIMEOUT?=30s
 
-ENV?=develop
 host_num?=publishing 3
 host_bin=bin-$(APP)
 
