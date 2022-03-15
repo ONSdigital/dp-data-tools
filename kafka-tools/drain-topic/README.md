@@ -73,7 +73,7 @@ Hit **Ctrl-C** to stop the consumer once it acquiesces (i.e. no more messages to
 
 ### Clean up
 
-This will remove remote files (in the env) and local build files:
+This will remove files that were copied onto the environment by running the `make drain` target and any files built locally from the same command:
 
 ```bash
 make clean ENV=develop       # or ENV=production
