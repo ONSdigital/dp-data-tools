@@ -50,32 +50,15 @@ we will stop the `dp-observation-importer` app:
 
 In nomad choose Jobs --> `dp-observation-importer` and click `Stop`.
 
-### Drain the `observation-imported` topic
+### Drain the topic 
 
-The makefile `kafka-tools/drain-topic/Makefile` tries to keep this as simple as possible:
+The makefile `kafka-tools/drain-topic/Makefile` tries to keep this as simple as possible.
+
+To drain the *default* topic (the `observation-imported` topic):
 
 ```bash
 make drain ENV=develop       # or ENV=production
 ```
-
-Hit **Ctrl-C** to stop the consumer once it acquiesces.
-(i.e. no more messages to consume)
-
-### Clean up
-
-This will remove remote files (in the env) and local build files.
-
-```bash
-make clean ENV=develop       # tidy up after yourself, please!
-```
-
-### In nomad, restart the stopped service
-
-Restart the app to return normality. Check all's well.
-
----
-
-## Example targetting `import-observations-inserted` topic
 
 *Alternatively*, you might wish to drain a *non-default* topic,
 say, `import-observations-inserted`.
@@ -83,13 +66,23 @@ say, `import-observations-inserted`.
 We will need to use the correct consumer group for the topic
 (and use the cert/secrets from the corresponding consumer app).
 
-For this example topic, the consumer app is: `dp-import-tracker`,
-and the *drain* step (as part of the above [steps](#steps)) would therefore be:
+For the `import-observations-inserted` topic, the consumer app is: `dp-import-tracker`,
+and the *drain* step would therefore be:
 
 ```bash
 make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker ENV=develop       # or ENV=production
 ```
 
-Hit **Ctrl-C** to stop the consumer once it acquiesces.
+Hit **Ctrl-C** to stop the consumer once it acquiesces (i.e. no more messages to consume).
 
-Remember to [clean up](#clean)
+### Clean up
+
+This will remove remote files (in the env) and local build files:
+
+```bash
+make clean ENV=develop       # or ENV=production
+```
+
+### In nomad, restart the stopped service
+
+Restart the app to return normality. Check all's well.
