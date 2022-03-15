@@ -61,7 +61,7 @@ make drain ENV=develop       # or ENV=production
 Hit **Ctrl-C** to stop the consumer once it acquiesces.
 (i.e. no more messages to consume)
 
-## Clean up
+### Clean up
 
 This will remove remote files (in the env) and local build files.
 
@@ -92,4 +92,4 @@ make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker ENV=develo
 
 Hit **Ctrl-C** to stop the consumer once it acquiesces.
 
-Remember to [clean up](#clean_up)
+Remember to [clean up](#clean)
