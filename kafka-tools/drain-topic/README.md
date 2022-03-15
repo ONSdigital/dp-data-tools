@@ -22,15 +22,15 @@ You will need:
 
 Get them up-to-date:
 
-```shell
-$ cd ~/src/github.com/ONSdigital/dp-configs # wherever you keep this
-$ git switch master && git pull             #   get up-to-date
+```bash
+cd ~/src/github.com/ONSdigital/dp-configs # wherever you keep this
+git switch master && git pull             #   get up-to-date
 
-$ cd ~/src/github.com/ONSdigital/dp-kafka   # wherever you keep this
-$ git switch main   && git pull             #   get up-to-date
+cd ~/src/github.com/ONSdigital/dp-kafka   # wherever you keep this
+git switch main   && git pull             #   get up-to-date
 
-$ cd ~/src/github.com/ONSdigital/dp-cli     # wherever you keep this
-$ git pull && make install                  #   get up-to-date
+cd ~/src/github.com/ONSdigital/dp-cli     # wherever you keep this
+git pull && make install                  #   get up-to-date
 ```
 
 Return to this directory to continue.
@@ -46,25 +46,27 @@ This is because we need our process to consume from (drain) all partitions
 for this consumer group.
 
 In this example (i.e. the default consumer of the topic),
-we will stop the `dp-observation-importer` app in nomad.
+we will stop the `dp-observation-importer` app:
+
+In nomad choose Jobs --> `dp-observation-importer` and click `Stop`.
 
 ### Drain the `observation-imported` topic
 
-The makefile in `dp-kafka` tries to keep this as simple as possible:
+The makefile `kafka-tools/drain-topic/Makefile` tries to keep this as simple as possible:
 
-```shell
-$ make drain ENV=develop       # or ENV=production
+```bash
+make drain ENV=develop       # or ENV=production
 ```
 
-Hit **Ctrl-C** to stop the consumer once it quiesces
+Hit **Ctrl-C** to stop the consumer once it acquiesces.
 (i.e. no more messages to consume)
 
-### Clean up
+## Clean up
 
 This will remove remote files (in the env) and local build files.
 
-```shell
-$ make clean ENV=develop       # tidy up after yourself, please!
+```bash
+make clean ENV=develop       # tidy up after yourself, please!
 ```
 
 ### In nomad, restart the stopped service
@@ -79,16 +81,15 @@ Restart the app to return normality. Check all's well.
 say, `import-observations-inserted`.
 
 We will need to use the correct consumer group for the topic
-(and use the cert/secrets from) the corresponding consumer app.
+(and use the cert/secrets from the corresponding consumer app).
 
 For this example topic, the consumer app is: `dp-import-tracker`,
-and the *drain* step (as part of the above [steps](#steps)),
-in the `develop` env, would therefore be:
+and the *drain* step (as part of the above [steps](#steps)) would therefore be:
 
-```shell
-$ make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker
+```bash
+make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker ENV=develop       # or ENV=production
 ```
 
-Hit **Ctrl-C** to stop the consumer once it quiesces
+Hit **Ctrl-C** to stop the consumer once it acquiesces.
 
 Remember to [clean up](#clean_up)
