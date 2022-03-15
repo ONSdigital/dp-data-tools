@@ -42,12 +42,9 @@ First, stop the app(s) in nomad to turn off any consumers of the topic
 for this consumer group.
 
 This is because we need our process to consume from (drain) all partitions
-for this consumer group.
+for this consumer group:
 
-In this example (i.e. the default consumer of the topic),
-we will stop the `dp-observation-importer` app:
-
-In nomad choose Jobs --> `dp-observation-importer` (or the relevant app name) and click `Stop`.
+In nomad choose Jobs --> `dp-observation-importer` (or the relevant consumer app name) and click `Stop`.
 
 ### Drain the topic 
 
