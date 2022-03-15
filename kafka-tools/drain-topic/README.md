@@ -21,7 +21,6 @@ You will need:
   * then `dp ssh` to run it in the env
 
 Get them up-to-date:
-
 ```bash
 cd ~/src/github.com/ONSdigital/dp-configs # wherever you keep this
 git switch master && git pull             #   get up-to-date
@@ -48,7 +47,7 @@ for this consumer group.
 In this example (i.e. the default consumer of the topic),
 we will stop the `dp-observation-importer` app:
 
-In nomad choose Jobs --> `dp-observation-importer` and click `Stop`.
+In nomad choose Jobs --> `dp-observation-importer` (or the relevant app name) and click `Stop`.
 
 ### Drain the topic 
 
@@ -60,7 +59,7 @@ To drain the *default* topic (the `observation-imported` topic):
 make drain ENV=develop       # or ENV=production
 ```
 
-*Alternatively*, you might wish to drain a *non-default* topic,
+*Alternatively*, we might wish to drain a *non-default* topic,
 say, `import-observations-inserted`.
 
 We will need to use the correct consumer group for the topic
