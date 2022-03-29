@@ -3,6 +3,8 @@
 // Update all topic ids to use a new nano id
 
 const collection = 'topics'
+const idSize = 4
+const idAlphabet = '123456789'
 
 if (typeof(cfg) == "undefined") {
     // default, but can be changed on command-line, see README
@@ -19,8 +21,7 @@ var allNewIds = []  // Store all new ids to check for clashes
 function getNewId(oldId) {
     if (idMap[oldId] == null) {
         do {
-            var s = "0000" + Math.random() * 1000
-            newId = s.substring(s.length - 4)
+            newId = makeId()
         } while (isUsedId(newId))
         allNewIds.push(newId)
         idMap[oldId] = newId
@@ -38,16 +39,26 @@ function isUsedId(id) {
     return false
 }
 
+function makeId() {
+    var result = ''
+    for (var i = 0; i < idSize; i++) {
+      result += idAlphabet.charAt(Math.floor(Math.random() * idAlphabet.length))
+    }
+    return result
+}
+
 function updateTopicDocument(topic) {
     var oldId = topic.id
-    var newId = getNewId(topic.id)
+    if (oldId != 'topic_root') {
+        var newId = getNewId(topic.id)
 
-    topic.id = newId
-    topic.next.id = newId
-    topic.current.id = newId
-
-    updateLinks(topic.next.links, oldId, newId)
-    updateLinks(topic.current.links, oldId, newId)
+        topic.id = newId
+        topic.next.id = newId
+        topic.current.id = newId
+    
+        updateLinks(topic.next.links, oldId, newId)
+        updateLinks(topic.current.links, oldId, newId)
+    }
 
     updateSubtopics(topic.next)
     updateSubtopics(topic.current)
