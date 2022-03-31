@@ -1,8 +1,9 @@
 // update-topic-id.js
 //
-// Update all topic ids to use a new nano id
+// Update all topic ids to use a new nano id and references to them in the content collection
 
-const collection = 'topics'
+const topicsCollection = 'topics'
+const contentCollection = 'content'
 const idSize = 4
 const idAlphabet = '123456789'
 
@@ -51,13 +52,17 @@ function updateTopicDocument(topic) {
     var oldId = topic.id
     if (oldId != 'topic_root') {
         var newId = getNewId(topic.id)
-
         topic.id = newId
-        topic.next.id = newId
-        topic.current.id = newId
-    
-        updateLinks(topic.next.links, oldId, newId)
-        updateLinks(topic.current.links, oldId, newId)
+
+        if (topic.next) {
+            topic.next.id = newId
+            updateLinks(topic.next.links, oldId, newId)
+        }
+
+        if (topic.current) {
+            topic.current.id = newId
+            updateLinks(topic.current.links, oldId, newId)
+        }
     }
 
     updateSubtopics(topic.next)
@@ -81,7 +86,7 @@ function updateLinks(links, oldId, newId) {
 }
 
 function updateSubtopics(element) {
-    if (element.subtopics_ids) {
+    if (element && element.subtopics_ids) {
         for (var i = 0; i < element.subtopics_ids.length; i++) {
             element.subtopics_ids[i] = getNewId(element.subtopics_ids[i])
         }
@@ -90,7 +95,10 @@ function updateSubtopics(element) {
 
 //////////////////////////
 
-var topicCursor = db.getCollection(collection).find()
+
+// Update all topics
+print("Updating topics...")
+var topicCursor = db.getCollection(topicsCollection).find()
 while (topicCursor.hasNext()) {
     var topic = topicCursor.next()
     updateTopicDocument(topic)
@@ -98,6 +106,27 @@ while (topicCursor.hasNext()) {
         printjson(topic)
     }
     if (cfg.update) {
-        db.getCollection(collection).updateOne({_id:topic._id}, {$set : topic} )
+        db.getCollection(topicsCollection).updateOne({_id:topic._id}, {$set : topic} )
     }
 }
+
+// Update references in the content collection
+print("\nUpdating content references...")
+var totalContentDocumentsUpdated = 0;
+var contentCursor = db.getCollection(contentCollection).find()
+while (contentCursor.hasNext()) {
+    var content = contentCursor.next()
+    if (idMap[content.id] != null) {
+        content.id = idMap[content.id]
+        if (cfg.verbose) {
+            printjson(content)
+        }
+        if (cfg.update) {
+            db.getCollection(contentCollection).updateOne({_id:content._id}, {$set : content} )
+        }
+        totalContentDocumentsUpdated++
+    } else {
+        print(content.id + " was not found in topics collection: unchanged")
+    }
+}
+print(totalContentDocumentsUpdated + " content documents updated")

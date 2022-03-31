@@ -1,7 +1,8 @@
 update-topic-ids
 ==================
 
-This utility updates `topics` documents to use a new nano id of size 4 using an alphabet of `123456789`.
+This utility updates `topics` documents to use a new nano id of size 4 using an alphabet of `123456789`. 
+It will also update the `content` documents to use the new ids.
 
 See [decision record](https://github.com/ONSdigital/dp-decision-records/blob/feature/topics/TopicsService/0001-topic-and-subtopic-definition-and-assignment.md#root-and-sub-topic-id)
 
