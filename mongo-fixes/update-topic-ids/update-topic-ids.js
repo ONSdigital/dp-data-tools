@@ -37,7 +37,8 @@ function isUsedId(id) {
             return true
         }
     }
-    return false
+    // If it isn't one of the newly created ids, check if present in databse
+    return db.getCollection(topicsCollection).find({id:id}).hasNext()
 }
 
 function makeId() {
