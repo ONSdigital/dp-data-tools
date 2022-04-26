@@ -23,13 +23,13 @@ You will need:
 Get them up-to-date:
 ```bash
 cd ~/src/github.com/ONSdigital/dp-configs # wherever you keep this
-git switch master && git pull             #   get up-to-date
+git switch master && git pull             # get up-to-date
 
 cd ~/src/github.com/ONSdigital/dp-kafka   # wherever you keep this
-git switch main   && git pull             #   get up-to-date
+git switch main && git pull               # get up-to-date
 
 cd ~/src/github.com/ONSdigital/dp-cli     # wherever you keep this
-git pull && make install                  #   get up-to-date
+git pull && make install                  # get up-to-date
 ```
 
 Return to this directory to continue.
