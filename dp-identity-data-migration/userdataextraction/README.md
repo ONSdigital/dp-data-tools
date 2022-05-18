@@ -17,24 +17,37 @@ We are going to need to split the names to first and last as best as we can (doe
 
 ###Set Up and Execution
 two terminal windows are required  one for the tunnel, another to run extracts 
+<ENVIRONMENT {localhost, develop, development, prod}>
 1. Set Up and Run Tunnel
     If using localhost start the apps required to run local florence/zebedee (There is no need to start tunnel).
     If using an remote environment version
     ```shell
-    dp remote allow <environment>
+    dp remote allow <ENVIRONMENT>
     dp ssh develop publishing 1 -p 10050:10050
     ```
-3. In the other Terminal Widow 
+2. In the other Terminal Widow 
     Set the require  Environmental Variables :-
     ``` shell 
-    export zebedee_user=<zebedee user email>
-    export zebedee_pword=<zebedee user password for environment>
-    export zebedee_host=\<local "http://localhost:8082"; otherwise "http://localhost:10050">
-    export filename=<full path to file>
-    export s3_base_dir=<S3 base directory>
-    export s3_bucket=<S3 bucket name>
-    export s3_region=<S3 bucket region>
-    export email_domains=<comma separated valid email domain ex: ons.com>
+    export environment=<ENVIRONMENT>
+    if [ ${environment}="localhost" ]
+        then
+        export zebedee_host="http://localhost:8082" 
+        export email_domains="gmail.com,ons.gov.uk,ext.ons.gov.uk,methods.co.uk"
+    else 
+        export zebedee_host="http://localhost:10050"
+        export email_domains="ons.gov.uk,ext.ons.gov.uk"
+        dp remote allow ${environment}
+        dp ssh ${environment} publishing 1 -p 10050:10050
+    fi
+
+    export zebedee_user="<ZEBEDEE USER EMAIL>"
+    export zebedee_pword="<PASSWORD FOR ABOVE USER>"
+    
+    export tmpfilepath="<fullpath for a temp file>"
+    export filename="users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv"
+    export s3_bucket="ons-dp-develop-cognito-backup-poc"
+    export s3_base_dir="${environment}"
+    export s3_region="eu-west-1"
 
 4. Run the code....
    ``` shell
@@ -44,10 +57,16 @@ two terminal windows are required  one for the tunnel, another to run extracts
 ### Output
 #### in Terminal 
 ```
-=========  ...users.csv file validiation =============
-Expected row count: -  112
-Actual row count: -  112
+This is for  localhost
+========= file validiation =============
+Expected row count: -  2
+Valid users row count: -  1
+Invalid users row count: -  1
 =========
+========= Uploading valid users file to S3 =============
+file uploaded to, https://ons-dp-develop-cognito-backup-poc.s3.eu-west-1.amazonaws.com/localhost/users_export_2022-05-18_14_53_11.csv
+file uploaded to, https://ons-dp-develop-cognito-backup-poc.s3.eu-west-1.amazonaws.com/localhost/invalid_users_export_2022-05-18_14_53_11.csv
+========= Uploaded fules to S3 =============
 ```
 
 ####Files

@@ -18,17 +18,9 @@ import (
 )
 
 type config struct {
-	validUsersFileName, invalidUsersFileName, host, pword, user string
-	emailDomains                                                []string
-	s3Bucket, s3BaseDir, s3Region                               string
-}
-
-func (c config) getS3ValidUsersFilePath() string {
-	return fmt.Sprintf("%s%s", c.s3BaseDir, c.validUsersFileName)
-}
-
-func (c config) getS3InValidUsersFilePath() string {
-	return fmt.Sprintf("%s%s", c.s3BaseDir, c.invalidUsersFileName)
+	tmpfilepath, environment, validUsersFileName, invalidUsersFileName, host, pword, user string
+	emailDomains                                                                          []string
+	s3Bucket, s3BaseDir, s3Region                                                         string
 }
 
 var header = cognito_user{
@@ -81,10 +73,15 @@ type cognito_user struct {
 
 func readConfig() *config {
 	conf := &config{}
-	fmt.Println(conf)
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
 		switch pair[0] {
+		case "environment":
+			missing_variables("environment", pair[1])
+			conf.environment = pair[1]
+		case "tmpfilepath":
+			missing_variables("tmpfilepath", pair[1])
+			conf.tmpfilepath = pair[1]
 		case "filename":
 			missing_variables("filename", pair[1])
 			conf.validUsersFileName = pair[1]
@@ -105,18 +102,13 @@ func readConfig() *config {
 			missing_variables("s3_bucket", pair[1])
 			conf.s3Bucket = pair[1]
 		case "s3_base_dir":
-			missing_variables("s3_bucket", pair[1])
+			missing_variables("s3_base_dir", pair[1])
 			conf.s3BaseDir = pair[1]
 		case "s3_region":
 			missing_variables("s3_region", pair[1])
 			conf.s3Region = pair[1]
 		}
 	}
-	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.validUsersFileName == "" {
-		fmt.Println("Please set Environment Variables ")
-		os.Exit(1)
-	}
-
 	return conf
 }
 
@@ -252,17 +244,16 @@ func main() {
 	}
 
 	userList, err := zebCli.GetUsers(sess)
-
 	if err != nil {
 		fmt.Println("Theres been an issue")
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	validUsersFile := createFile(conf.validUsersFileName)
+	validUsersFile := createFile(conf.tmpfilepath + conf.validUsersFileName)
 	validUsersWriter := csv.NewWriter(validUsersFile)
 
-	invalidUsersFile := createFile(conf.invalidUsersFileName)
+	invalidUsersFile := createFile(conf.tmpfilepath + conf.invalidUsersFileName)
 	invalidUsersWriter := csv.NewWriter(invalidUsersFile)
 
 	csvheader := convert_to_slice(header)
@@ -289,9 +280,23 @@ func main() {
 	invalidUsersFile.Close()
 
 	fmt.Println("========= Uploading valid users file to S3 =============")
-	uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.getS3ValidUsersFilePath(), conf.s3Region)
-	uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.getS3InValidUsersFilePath(), conf.s3Region)
+	s3err := uploadFile(conf.tmpfilepath+conf.validUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.validUsersFileName, conf.s3Region)
+	if s3err != nil {
+		fmt.Println("Theres been an issue in uploading to s3")
+		fmt.Println(s3err)
+		os.Exit(1)
+	}
+
+	s3err = uploadFile(conf.tmpfilepath+conf.invalidUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.invalidUsersFileName, conf.s3Region)
+	if s3err != nil {
+		fmt.Println("Theres been an issue in uploading to s3")
+		fmt.Println(s3err)
+		os.Exit(1)
+	}
+
 	fmt.Println("========= Uploaded fules to S3 =============")
+	deleteFile(conf.tmpfilepath + conf.validUsersFileName)
+	deleteFile(conf.tmpfilepath + conf.invalidUsersFileName)
 
 }
 
@@ -302,4 +307,12 @@ func createFile(fileName string) *os.File {
 		os.Exit(1)
 	}
 	return csvFile
+}
+
+func deleteFile(fileName string) {
+	err := os.Remove(fileName)
+	if err != nil {
+		fmt.Printf("failed deleting file: %s", err)
+		os.Exit(1)
+	}
 }
