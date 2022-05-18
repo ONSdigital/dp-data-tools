@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"strings"
 
 	"os"
 
@@ -80,25 +81,34 @@ type cognito_user struct {
 
 func readConfig() *config {
 	conf := &config{}
+	fmt.Println(conf)
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
 		switch pair[0] {
 		case "filename":
+			missing_variables("filename", pair[1])
 			conf.validUsersFileName = pair[1]
 			conf.invalidUsersFileName = fmt.Sprintf("invalid_%s", pair[1])
 		case "zebedee_user":
+			missing_variables("zebedee_user", pair[1])
 			conf.user = pair[1]
 		case "zebedee_pword":
+			missing_variables("zebedee_pword", pair[1])
 			conf.pword = pair[1]
 		case "zebedee_host":
+			missing_variables("zebedee_host", pair[1])
 			conf.host = pair[1]
 		case "email_domains":
+			missing_variables("zebedee_host", pair[1])
 			conf.emailDomains = strings.Split(pair[1], ",")
 		case "s3_bucket":
+			missing_variables("s3_bucket", pair[1])
 			conf.s3Bucket = pair[1]
 		case "s3_base_dir":
+			missing_variables("s3_bucket", pair[1])
 			conf.s3BaseDir = pair[1]
 		case "s3_region":
+			missing_variables("s3_region", pair[1])
 			conf.s3Region = pair[1]
 		}
 	}
@@ -108,6 +118,14 @@ func readConfig() *config {
 	}
 
 	return conf
+}
+
+func missing_variables(envValue string, value string) bool {
+	if len(value) == 0 {
+		fmt.Println("Please set Environment Variables ", envValue)
+		os.Exit(1)
+	}
+	return true
 }
 
 func convert_to_slice(input cognito_user) []string {
