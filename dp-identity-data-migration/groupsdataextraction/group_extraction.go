@@ -1,13 +1,14 @@
-package main
+package groupsdataextraction
 
 import (
 	"encoding/csv"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"os"
-	"strings"
 
 	"time"
 
@@ -138,7 +139,15 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 	return nil
 }
 
-func main() {
+func deleteFile(fileName string) {
+	err := os.Remove(fileName)
+	if err != nil {
+		fmt.Printf("failed deleting file: %s", err)
+		os.Exit(1)
+	}
+}
+
+func ExtractGroupData() {
 
 	conf := readConfig()
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
@@ -157,8 +166,11 @@ func main() {
 
 	// groups process
 	groupList, err := zebCli.ListTeams(sess)
+	fmt.Println(groupList)
+	fmt.Println(err)
+
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Get data from zebedee", err)
 		os.Exit(1)
 	}
 
@@ -204,6 +216,8 @@ func main() {
 	uploadFile(conf.groupsFilename, conf.s3Bucket, conf.getS3GroupsFilePath(), conf.s3Region)
 
 	fmt.Println("Uploaded", conf.groupsFilename, "to s3")
+	deleteFile(conf.groupsFilename)
+
 	// UserGroups part...
 
 	tmpUserGroups := make(map[string][]string)
@@ -285,5 +299,5 @@ func main() {
 	uploadFile(conf.groupUsersFilename, conf.s3Bucket, conf.getS3GroupUsersFilePath(), conf.s3Region)
 
 	fmt.Println("Uploaded", conf.groupUsersFilename, "to s3")
-
+	deleteFile(conf.groupUsersFilename)
 }
