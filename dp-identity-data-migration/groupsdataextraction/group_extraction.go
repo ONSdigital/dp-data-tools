@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-
 	"time"
 
 	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 type config struct {
@@ -24,6 +22,159 @@ type config struct {
 	s3Bucket,
 	s3BaseDir,
 	s3Region string
+}
+
+func ExtractGroupsData() {
+
+	conf := readConfig()
+	httpCli := zebedee.NewHttpClient(time.Second * 5)
+	zebCli := zebedee.NewClient(conf.host, httpCli)
+
+	c := zebedee.Credentials{
+		Email:    conf.user,
+		Password: conf.pword,
+	}
+
+	sess, err := zebCli.OpenSession(c)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// groups process
+	groupList, err := zebCli.ListTeams(sess)
+	if err != nil {
+		fmt.Println("Get data from zebedee", err)
+		os.Exit(1)
+	}
+
+	groupsCSVFile, err := os.Create(conf.groupsFilename)
+	if err != nil {
+		fmt.Printf("failed creating file: %s", err)
+		os.Exit(1)
+	}
+	csvwriter := csv.NewWriter(groupsCSVFile)
+	csvwriter.Write(convertToSlice_Group(group_header))
+
+	for _, zebedeegroup := range groupList.Teams {
+		fmt.Println(zebedeegroup)
+		tmp := group{
+			GroupName:        fmt.Sprintf("%v", zebedeegroup.ID),
+			UserPoolId:       "",
+			Description:      zebedeegroup.Name,
+			RoleArn:          "",
+			Precedence:       "10",
+			LastModifiedDate: "",
+			CreationDate:     "",
+		}
+		csvwriter.Write(convertToSlice_Group(tmp))
+
+	}
+
+	fmt.Println("========= ", conf.groupsFilename, "file validiation =============")
+	records, _ := csv.NewReader(groupsCSVFile).ReadAll()
+	actualRowCount := len(records) - 1
+	if actualRowCount != len(groupList.Teams) || csvwriter.Error() != nil {
+		fmt.Println("There has been an error... ")
+		fmt.Println("csv Errors ", csvwriter.Error())
+	}
+
+	fmt.Println("Expected row count: - ", len(groupList.Teams))
+	fmt.Println("Actual row count: - ", actualRowCount)
+	fmt.Println("=========")
+
+	csvwriter.Flush()
+	groupsCSVFile.Close()
+
+	fmt.Println("Uploading", conf.groupsFilename, "to s3")
+
+	uploadFile(conf.groupsFilename, conf.s3Bucket, conf.getS3GroupsFilePath(), conf.s3Region)
+
+	fmt.Println("Uploaded", conf.groupsFilename, "to s3")
+	deleteFile(conf.groupsFilename)
+
+	// UserGroups part...
+
+	tmpUserGroups := make(map[string][]string)
+
+	usergroupsCSVFile, err := os.Create(conf.groupUsersFilename)
+	if err != nil {
+		fmt.Printf("failed creating file: %s", err)
+		os.Exit(1)
+	}
+	csvwriter = csv.NewWriter(usergroupsCSVFile)
+	csvwriter.Write(convertToSlice_UserGroup(headerUserGroup))
+
+	userList, err := zebCli.GetUsers(sess)
+
+	if err != nil {
+		fmt.Println("Theres been an issue", err)
+		os.Exit(1)
+	}
+
+	for _, user := range userList {
+
+		_, isKeyPresent := tmpUserGroups[user.Email]
+		if !isKeyPresent {
+			tmpUserGroups[user.Email] = make([]string, 0)
+		}
+
+		permissions, err := zebCli.GetPermissions(sess, user.Email)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if permissions.Admin {
+			tmpUserGroups[user.Email] = append(tmpUserGroups[user.Email], "role-admin")
+		}
+
+		if permissions.Editor {
+			tmpUserGroups[user.Email] = append(tmpUserGroups[user.Email], "role-publisher")
+		}
+	}
+
+	for _, zebedeegroup := range groupList.Teams {
+
+		for _, member := range zebedeegroup.Members {
+			_, isKeyPresent := tmpUserGroups[member]
+			if !isKeyPresent {
+				fmt.Println("---")
+				fmt.Println(member, "is not a user???")
+				fmt.Println("---")
+			} else {
+				tmpUserGroups[member] = append(tmpUserGroups[member], fmt.Sprintf("%v", zebedeegroup.ID))
+			}
+		}
+	}
+
+	for k, v := range tmpUserGroups {
+		tmp := userGroupCSV{
+			Username: k,
+			Groups:   strings.Join(v, ", "),
+		}
+		csvwriter.Write(convertToSlice_UserGroup(tmp))
+	}
+
+	records, _ = csv.NewReader(usergroupsCSVFile).ReadAll()
+	actualRowCount = len(records)
+	fmt.Println("========= ", conf.groupUsersFilename, "file validation =============")
+	if actualRowCount != len(userList) || csvwriter.Error() != nil {
+		fmt.Println("There has been an error... ")
+		fmt.Println("csv Errors ", csvwriter.Error())
+	}
+
+	fmt.Println("Expected row count: - ", len(userList))
+	fmt.Println("Actual row count: - ", actualRowCount)
+	fmt.Println("=========")
+
+	csvwriter.Flush()
+	usergroupsCSVFile.Close()
+
+	fmt.Println("Uploading", conf.groupUsersFilename, "to s3")
+
+	uploadFile(conf.groupUsersFilename, conf.s3Bucket, conf.getS3GroupUsersFilePath(), conf.s3Region)
+
+	fmt.Println("Uploaded", conf.groupUsersFilename, "to s3")
+	deleteFile(conf.groupUsersFilename)
 }
 
 func (c config) getS3GroupsFilePath() string {
@@ -145,159 +296,4 @@ func deleteFile(fileName string) {
 		fmt.Printf("failed deleting file: %s", err)
 		os.Exit(1)
 	}
-}
-
-func ExtractGroupData() {
-
-	conf := readConfig()
-	httpCli := zebedee.NewHttpClient(time.Second * 5)
-	zebCli := zebedee.NewClient(conf.host, httpCli)
-
-	c := zebedee.Credentials{
-		Email:    conf.user,
-		Password: conf.pword,
-	}
-
-	sess, err := zebCli.OpenSession(c)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	// groups process
-	groupList, err := zebCli.ListTeams(sess)
-	fmt.Println(groupList)
-	fmt.Println(err)
-
-	if err != nil {
-		fmt.Println("Get data from zebedee", err)
-		os.Exit(1)
-	}
-
-	groupsCSVFile, err := os.Create(conf.groupsFilename)
-	if err != nil {
-		fmt.Printf("failed creating file: %s", err)
-		os.Exit(1)
-	}
-	csvwriter := csv.NewWriter(groupsCSVFile)
-	csvwriter.Write(convertToSlice_Group(group_header))
-
-	for _, zebedeegroup := range groupList.Teams {
-		tmp := group{
-			GroupName:        fmt.Sprintf("%v", zebedeegroup.ID),
-			UserPoolId:       "",
-			Description:      zebedeegroup.Name,
-			RoleArn:          "",
-			Precedence:       "10",
-			LastModifiedDate: "",
-			CreationDate:     "",
-		}
-		csvwriter.Write(convertToSlice_Group(tmp))
-
-	}
-
-	fmt.Println("========= ", conf.groupsFilename, "file validiation =============")
-	records, _ := csv.NewReader(groupsCSVFile).ReadAll()
-	actualRowCount := len(records) - 1
-	if actualRowCount != len(groupList.Teams) || csvwriter.Error() != nil {
-		fmt.Println("There has been an error... ")
-		fmt.Println("csv Errors ", csvwriter.Error())
-	}
-
-	fmt.Println("Expected row count: - ", len(groupList.Teams))
-	fmt.Println("Actual row count: - ", actualRowCount)
-	fmt.Println("=========")
-
-	csvwriter.Flush()
-	groupsCSVFile.Close()
-
-	fmt.Println("Uploading", conf.groupsFilename, "to s3")
-
-	uploadFile(conf.groupsFilename, conf.s3Bucket, conf.getS3GroupsFilePath(), conf.s3Region)
-
-	fmt.Println("Uploaded", conf.groupsFilename, "to s3")
-	deleteFile(conf.groupsFilename)
-
-	// UserGroups part...
-
-	tmpUserGroups := make(map[string][]string)
-
-	usergroupsCSVFile, err := os.Create(conf.groupUsersFilename)
-	if err != nil {
-		fmt.Printf("failed creating file: %s", err)
-		os.Exit(1)
-	}
-	csvwriter = csv.NewWriter(usergroupsCSVFile)
-	csvwriter.Write(convertToSlice_UserGroup(headerUserGroup))
-
-	userList, err := zebCli.GetUsers(sess)
-
-	if err != nil {
-		fmt.Println("Theres been an issue", err)
-		os.Exit(1)
-	}
-
-	for _, user := range userList {
-
-		_, isKeyPresent := tmpUserGroups[user.Email]
-		if !isKeyPresent {
-			tmpUserGroups[user.Email] = make([]string, 0)
-		}
-
-		permissions, err := zebCli.GetPermissions(sess, user.Email)
-		if err != nil {
-			fmt.Println(err)
-		}
-		if permissions.Admin {
-			tmpUserGroups[user.Email] = append(tmpUserGroups[user.Email], "role-admin")
-		}
-
-		if permissions.Editor {
-			tmpUserGroups[user.Email] = append(tmpUserGroups[user.Email], "role-publisher")
-		}
-	}
-
-	for _, zebedeegroup := range groupList.Teams {
-
-		for _, member := range zebedeegroup.Members {
-			_, isKeyPresent := tmpUserGroups[member]
-			if !isKeyPresent {
-				fmt.Println("---")
-				fmt.Println(member, "is not a user???")
-				fmt.Println("---")
-			} else {
-				tmpUserGroups[member] = append(tmpUserGroups[member], fmt.Sprintf("%v", zebedeegroup.ID))
-			}
-		}
-	}
-
-	for k, v := range tmpUserGroups {
-		tmp := userGroupCSV{
-			Username: k,
-			Groups:   strings.Join(v, ", "),
-		}
-		csvwriter.Write(convertToSlice_UserGroup(tmp))
-	}
-
-	records, _ = csv.NewReader(usergroupsCSVFile).ReadAll()
-	actualRowCount = len(records)
-	fmt.Println("========= ", conf.groupUsersFilename, "file validation =============")
-	if actualRowCount != len(userList) || csvwriter.Error() != nil {
-		fmt.Println("There has been an error... ")
-		fmt.Println("csv Errors ", csvwriter.Error())
-	}
-
-	fmt.Println("Expected row count: - ", len(userList))
-	fmt.Println("Actual row count: - ", actualRowCount)
-	fmt.Println("=========")
-
-	csvwriter.Flush()
-	usergroupsCSVFile.Close()
-
-	fmt.Println("Uploading", conf.groupUsersFilename, "to s3")
-
-	uploadFile(conf.groupUsersFilename, conf.s3Bucket, conf.getS3GroupUsersFilePath(), conf.s3Region)
-
-	fmt.Println("Uploaded", conf.groupUsersFilename, "to s3")
-	deleteFile(conf.groupUsersFilename)
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/ONSdigital/dp-data-tools/dp-identity-data-migration/groupsdataextraction"
+	"github.com/ONSdigital/dp-data-tools/groupsdataextraction"
 )
 
 func main() {

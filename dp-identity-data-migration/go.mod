@@ -1,17 +1,16 @@
-module github.com/ONSdigital/dp-data-tools/dp-identity-data-migration
+module groupsdataextraction
 
 go 1.17
 
 require (
 	github.com/ONSdigital/dp-zebedee-sdk-go v0.10.0
-	github.com/aws/aws-sdk-go v1.44.18
+	github.com/aws/aws-sdk-go v1.44.19
 	github.com/google/uuid v1.3.0
 	github.com/smartystreets/goconvey v1.7.2
 )
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.41.1 // indirect
-	github.com/ONSdigital/dp-data-tools v0.0.0-20220426125527-a81d87f6fdb3 // indirect
 	github.com/ONSdigital/dp-net v1.2.0 // indirect
 	github.com/ONSdigital/log.go/v2 v2.0.5 // indirect
 	github.com/fatih/color v1.12.0 // indirect
