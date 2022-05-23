@@ -17,6 +17,7 @@ Some of these tools require [dp-cli](https://github.com/ONSdigital/dp-cli).
 * [Remove collection_id from published datasets](./mongo-fixes/delete-published-collection-id)
 * [Neptune migration - clear all collections and import updated recipes](./mongo-fixes/neptune-migration)
 * [Copy datasets from mongodb on develop to local mongodb](./mongo-tools/copy-datasets)
+* [Update topics IDs](./mongo-fixes/update-topic-ids)
 
 ### kafka related
 
@@ -27,3 +28,4 @@ Some of these tools require [dp-cli](https://github.com/ONSdigital/dp-cli).
 ### dp-topics-api related
 
 * [Generate Topics database](./topics-tools/gen-topics-database)
+* [Update topics IDs](./mongo-fixes/update-topic-ids)
