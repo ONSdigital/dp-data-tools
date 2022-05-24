@@ -4,8 +4,7 @@ go 1.17
 
 require (
 	github.com/ONSdigital/dp-zebedee-sdk-go v0.10.0
-	github.com/aws/aws-sdk-go v1.44.19
-	github.com/google/uuid v1.3.0
+	github.com/aws/aws-sdk-go v1.44.20
 	github.com/smartystreets/goconvey v1.7.2
 )
 
