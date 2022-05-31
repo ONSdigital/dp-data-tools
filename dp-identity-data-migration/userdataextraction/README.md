@@ -17,39 +17,33 @@ We are going to need to split the names to first and last as best as we can (doe
 
 ###Set Up and Execution
 two terminal windows are required  one for the tunnel, another to run extracts 
-<ENVIRONMENT {localhost, develop, development, prod}>
 1. Set Up and Run Tunnel
     If using localhost start the apps required to run local florence/zebedee (There is no need to start tunnel).
     If using an remote environment version
     ```shell
-    dp remote allow <ENVIRONMENT>
-    dp ssh develop publishing 1 -p 10050:10050
+    dp remote allow <environment>
+    dp ssh <environment> publishing 1 -p 10050:10050
     ```
-2. In the other Terminal Widow 
-    Set the require  Environmental Variables :-
+2. In the other Terminal Widow  set the require  Environmental Variables :-
     ``` shell 
-    export environment=<ENVIRONMENT>
-    if [ ${environment}="localhost" ]
-        then
-        export zebedee_host="http://localhost:8082" 
+    export environment=<'localhost' 'develop' 'prod' 'production' 'sandbox'>
+    if environment = localhost 
+        export zebedee_host=""http://localhost:8082"" 
         export email_domains="gmail.com,ons.gov.uk,ext.ons.gov.uk,methods.co.uk"
     else 
-        export zebedee_host="http://localhost:10050"
+        export zebedee_host=""http://localhost:10050" 
         export email_domains="ons.gov.uk,ext.ons.gov.uk"
-        dp remote allow ${environment}
-        dp ssh ${environment} publishing 1 -p 10050:10050
-    fi
 
-    export zebedee_user="<ZEBEDEE USER EMAIL>"
-    export zebedee_pword="<PASSWORD FOR ABOVE USER>"
-    
-    export tmpfilepath="<fullpath for a temp file>"
-    export filename="users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv"
+    export zebedee_user=<zebedee user admin email>
+    export zebedee_pword=<zebedee user admin password for environment>
+    export groups_filename=<groups_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export groupusers_filename=<groupusers_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export filename=<users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
     export s3_bucket="ons-dp-develop-cognito-backup-poc"
-    export s3_base_dir="${environment}"
-    export s3_region="eu-west-1"
+    export s3_region=<{eu-west-1 eu-west-3}
+    ```
 
-4. Run the code....
+3. Run the code....
    ``` shell
    go run dp-identity-data-migration/userdataextraction/user_extraction.go
    ```
@@ -64,8 +58,8 @@ Valid users row count: -  1
 Invalid users row count: -  1
 =========
 ========= Uploading valid users file to S3 =============
-file uploaded to, https://ons-dp-develop-cognito-backup-poc.s3.eu-west-1.amazonaws.com/localhost/users_export_2022-05-18_14_53_11.csv
-file uploaded to, https://ons-dp-develop-cognito-backup-poc.s3.eu-west-1.amazonaws.com/localhost/invalid_users_export_2022-05-18_14_53_11.csv
+file uploaded to, https://<s3_bucket>.s3.<s3_region>.amazonaws.com/<environment>/<filename>
+file uploaded to, https://<s3_bucket>.s3.<s3_region>.amazonaws.com/<environment>/invalid_<filename>
 ========= Uploaded fules to S3 =============
 ```
 
@@ -76,5 +70,16 @@ cognito:username | name | given_name | family_name | middle_name | nickname | pr
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 uudi | --- | from email if expected format | from email if expected format | --- | --- | --- | --- | --- | email | true | --- | --- | --- | --- | --- | false | --- | --- | false 
 
+
+to run the import 
+cd .../dp-identity-api/scripts/users/
+
+export FILENAME="<ENVIRONMENT>/<filename>"
+export S3_BUCKET=<s3_bucket>
+export S3_BASE_DIR=""
+export S3_REGION=<s3_region>
+export USER_POOL_ID={eu-west-1_Rnma9lp2q}
+
+go run restore_users.go
 
 **Note** *don't forget to unset the environmental variables that had been set*

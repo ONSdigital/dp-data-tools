@@ -14,13 +14,13 @@ import (
 )
 
 type config struct {
+	environment,
 	groupsFilename,
 	groupUsersFilename,
 	host,
 	pword,
 	user,
 	s3Bucket,
-	s3BaseDir,
 	s3Region string
 }
 
@@ -130,7 +130,13 @@ func (c config) processGroups(groupList zebedee.TeamsList) {
 	fmt.Println("=========")
 
 	fmt.Println("Uploading", c.groupsFilename, "to s3")
-	uploadFile(c.groupsFilename, c.s3Bucket, c.getS3GroupsFilePath(), c.s3Region)
+
+	s3err := uploadFile(c.groupsFilename, c.s3Bucket, c.environment+"/"+c.groupsFilename, c.s3Region)
+	if s3err != nil {
+		fmt.Println("Theres been an issue in uploading to s3")
+		fmt.Println(s3err)
+		os.Exit(1)
+	}
 	fmt.Println("Uploaded", c.groupsFilename, "to s3")
 
 	deleteFile(c.groupsFilename)
@@ -193,18 +199,16 @@ func (c config) processGroupsUsers(groupList zebedee.TeamsList, userList []zebed
 	fmt.Println("=========")
 
 	fmt.Println("Uploading", c.groupUsersFilename, "to s3")
-	uploadFile(c.groupUsersFilename, c.s3Bucket, c.getS3GroupUsersFilePath(), c.s3Region)
+
+	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.environment+"/"+c.groupUsersFilename, c.s3Region)
+	if s3err != nil {
+		fmt.Println("Theres been an issue in uploading to s3")
+		fmt.Println(s3err)
+		os.Exit(1)
+	}
 	fmt.Println("Uploaded", c.groupUsersFilename, "to s3")
 
 	deleteFile(c.groupUsersFilename)
-}
-
-func (c config) getS3GroupsFilePath() string {
-	return fmt.Sprintf("%s%s", c.s3BaseDir, c.groupsFilename)
-}
-
-func (c config) getS3GroupUsersFilePath() string {
-	return fmt.Sprintf("%s%s", c.s3BaseDir, c.groupUsersFilename)
 }
 
 func readConfig() *config {
@@ -212,6 +216,8 @@ func readConfig() *config {
 	for _, e := range os.Environ() {
 		pair := strings.SplitN(e, "=", 2)
 		switch pair[0] {
+		case "environment":
+			conf.environment = pair[1]
 		case "groups_filename":
 			conf.groupsFilename = pair[1]
 		case "groupusers_filename":
@@ -224,21 +230,29 @@ func readConfig() *config {
 			conf.host = pair[1]
 		case "s3_bucket":
 			conf.s3Bucket = pair[1]
-		case "s3_base_dir":
-			conf.s3BaseDir = pair[1]
 		case "s3_region":
 			conf.s3Region = pair[1]
 		}
 	}
 
-	if conf.host == "" || conf.pword == "" || conf.user == "" || conf.groupsFilename == "" || conf.groupUsersFilename == "" {
-		fmt.Println("Please set Environment Variables ")
-		fmt.Println(conf.host)
-
-		os.Exit(1)
-	}
+	missing_variables("environment", conf.environment)
+	missing_variables("groups_filename", conf.groupsFilename)
+	missing_variables("groupusers_filename", conf.groupUsersFilename)
+	missing_variables("zebedee_user", conf.user)
+	missing_variables("zebedee_pword", conf.pword)
+	missing_variables("zebedee_host", conf.host)
+	missing_variables("s3_bucket", conf.s3Bucket)
+	missing_variables("s3_region", conf.s3Region)
 
 	return conf
+}
+
+func missing_variables(envValue string, value string) bool {
+	if len(value) == 0 {
+		fmt.Println("Please set Environment Variables ", envValue)
+		os.Exit(3)
+	}
+	return true
 }
 
 type group struct {
@@ -321,5 +335,8 @@ func deleteFile(fileName string) {
 }
 
 func main() {
+	start := time.Now()
 	ExtractGroupsData()
+	elapsed := time.Since(start)
+	fmt.Printf("Elapse time %s\n", elapsed)
 }

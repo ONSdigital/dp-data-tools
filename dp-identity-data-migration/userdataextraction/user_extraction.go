@@ -18,9 +18,10 @@ import (
 )
 
 type config struct {
-	tmpfilepath, environment, validUsersFileName, invalidUsersFileName, host, pword, user string
-	emailDomains                                                                          []string
-	s3Bucket, s3BaseDir, s3Region                                                         string
+	environment,
+	validUsersFileName, invalidUsersFileName, host, pword, user string
+	emailDomains       []string
+	s3Bucket, s3Region string
 }
 
 var header = cognito_user{
@@ -77,45 +78,40 @@ func readConfig() *config {
 		pair := strings.SplitN(e, "=", 2)
 		switch pair[0] {
 		case "environment":
-			missing_variables("environment", pair[1])
 			conf.environment = pair[1]
-		case "tmpfilepath":
-			missing_variables("tmpfilepath", pair[1])
-			conf.tmpfilepath = pair[1]
 		case "filename":
-			missing_variables("filename", pair[1])
 			conf.validUsersFileName = pair[1]
 			conf.invalidUsersFileName = fmt.Sprintf("invalid_%s", pair[1])
 		case "zebedee_user":
-			missing_variables("zebedee_user", pair[1])
 			conf.user = pair[1]
 		case "zebedee_pword":
-			missing_variables("zebedee_pword", pair[1])
 			conf.pword = pair[1]
 		case "zebedee_host":
 			missing_variables("zebedee_host", pair[1])
 			conf.host = pair[1]
 		case "email_domains":
-			missing_variables("zebedee_host", pair[1])
 			conf.emailDomains = strings.Split(pair[1], ",")
 		case "s3_bucket":
-			missing_variables("s3_bucket", pair[1])
 			conf.s3Bucket = pair[1]
-		case "s3_base_dir":
-			missing_variables("s3_base_dir", pair[1])
-			conf.s3BaseDir = pair[1]
 		case "s3_region":
-			missing_variables("s3_region", pair[1])
 			conf.s3Region = pair[1]
 		}
 	}
+
+	missing_variables("environment", conf.environment)
+	missing_variables("filename", conf.validUsersFileName)
+	missing_variables("zebedee_user", conf.user)
+	missing_variables("zebedee_pword", conf.pword)
+	missing_variables("zebedee_host", conf.host)
+	missing_variables("s3_bucket", conf.s3Bucket)
+	missing_variables("s3_region", conf.s3Region)
 	return conf
 }
 
 func missing_variables(envValue string, value string) bool {
 	if len(value) == 0 {
 		fmt.Println("Please set Environment Variables ", envValue)
-		os.Exit(1)
+		os.Exit(3)
 	}
 	return true
 }
@@ -226,7 +222,7 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 	return nil
 }
 
-func main() {
+func ExtractUserData() {
 
 	conf := readConfig()
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
@@ -250,10 +246,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	validUsersFile := createFile(conf.tmpfilepath + conf.validUsersFileName)
+	validUsersFile := createFile(conf.validUsersFileName)
 	validUsersWriter := csv.NewWriter(validUsersFile)
 
-	invalidUsersFile := createFile(conf.tmpfilepath + conf.invalidUsersFileName)
+	invalidUsersFile := createFile(conf.invalidUsersFileName)
 	invalidUsersWriter := csv.NewWriter(invalidUsersFile)
 
 	csvheader := convert_to_slice(header)
@@ -280,14 +276,14 @@ func main() {
 	invalidUsersFile.Close()
 
 	fmt.Println("========= Uploading valid users file to S3 =============")
-	s3err := uploadFile(conf.tmpfilepath+conf.validUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.validUsersFileName, conf.s3Region)
+	s3err := uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.validUsersFileName, conf.s3Region)
 	if s3err != nil {
 		fmt.Println("Theres been an issue in uploading to s3")
 		fmt.Println(s3err)
 		os.Exit(1)
 	}
 
-	s3err = uploadFile(conf.tmpfilepath+conf.invalidUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.invalidUsersFileName, conf.s3Region)
+	s3err = uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.invalidUsersFileName, conf.s3Region)
 	if s3err != nil {
 		fmt.Println("Theres been an issue in uploading to s3")
 		fmt.Println(s3err)
@@ -295,8 +291,8 @@ func main() {
 	}
 
 	fmt.Println("========= Uploaded fules to S3 =============")
-	deleteFile(conf.tmpfilepath + conf.validUsersFileName)
-	deleteFile(conf.tmpfilepath + conf.invalidUsersFileName)
+	deleteFile(conf.validUsersFileName)
+	deleteFile(conf.invalidUsersFileName)
 
 }
 
@@ -315,4 +311,10 @@ func deleteFile(fileName string) {
 		fmt.Printf("failed deleting file: %s", err)
 		os.Exit(1)
 	}
+}
+func main() {
+	start := time.Now()
+	ExtractUserData()
+	elapsed := time.Since(start)
+	fmt.Printf("Elapse time %s\n", elapsed)
 }

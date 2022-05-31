@@ -17,7 +17,7 @@ The script needs to output to things:
 
 ## Solution 
 ###Requirements 
-1.  see go.mod 
+1.  see go.mod / go.sum
 2.  dp-cli access to required environment
 3.  florence/zebedee user and password for the required environment
 
@@ -28,21 +28,27 @@ two terminal windows are required  one for the tunnel, another to run extracts
     If using an remote environment version
     ```shell
     dp remote allow <environment>
-    dp ssh develop publishing 1 -p 10050:10050
+    dp ssh <environment> publishing 1 -p 10050:10050
     ```
-3. In the other Terminal Widow 
-    Set the require  Environmental Variables :-
+2. In the other Terminal Widow set the Environment Variables :-
     ``` shell 
-    export zebedee_user=<zebedee user email>
-    export zebedee_pword=<zebedee user password for environment>
-    export zebedee_host=\<local "http://localhost:8082"; otherwise "http://localhost:10050">
-    export groups_filename=<full path to file>
-    export groupusers_filename=<full path to file>
-    export s3_base_dir=<S3 base directory>
-    export s3_bucket=<S3 bucket name>
-    export s3_region=<S3 bucket region>
+    export environment=<'localhost' 'develop' 'prod' 'production' 'sandbox'>
+    if environment = localhost 
+        export zebedee_host=""http://localhost:8082"" 
+        export email_domains="gmail.com,ons.gov.uk,ext.ons.gov.uk,methods.co.uk"
+    else 
+        export zebedee_host=""http://localhost:10050" 
+        export email_domains="ons.gov.uk,ext.ons.gov.uk"
 
-4. Run the code....
+    export zebedee_user=<zebedee user admin email>
+    export zebedee_pword=<zebedee user admin password for environment>
+    export groups_filename=<groups_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export groupusers_filename=<groupusers_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export filename=<users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export s3_bucket=<ons-dp-develop-cognito-backup-poc>
+    export s3_region=<eu-west-1 for localhost, develop, production eu-west-3 for sandbox prod >
+    ```
+3. Run the code....
    ``` shell
    go run dp-identity-data-migration/groupsdataextraction/group_extraction.go
    ```
@@ -50,22 +56,24 @@ two terminal windows are required  one for the tunnel, another to run extracts
 ### Output
 #### in Terminal 
 ```
-=========  ... groups.csv file validiation =============
-Expected row count: -  14
-Actual row count: -  14
-csv Errors  <nil>
+This is for <environment>
+=========  <groups_filename> file validiation =============
+Expected row count: -  24
+Actual row count: -  24
 =========
-...
-{zebedee prints to terminal the list of users}
-...
+Uploading <groups_filename> to s3
+file uploaded to, https://<s3_bucket>.s3.<s3_region>.amazonaws.com/<environment>/<groups_filename>
+Uploaded <groups_filename> to s3
 ---
-viewer@ons.gov.uk is not a user??? (these team members are not in the zebedee user list and not included in the migration)
+list of 'users' that fail validation ....
 ---
-=========  ...usergroups.csv file validiation =============
-Expected row count: -  108
-Actual row count: -  108
-csv Errors  <nil>
+=========  <groupusers_filename> file validation =============
+Expected row count: -  168
+Actual row count: -  168
 =========
+Uploading <groupusers_filename> to s3
+file uploaded to, https://<s3_bucket>.s3.<s3_region>.amazonaws.com/<environment>/<groupusers_filename>
+Uploaded <groupusers_filename> to s3
 ```
 
 ####Files
@@ -80,8 +88,17 @@ ser_name | group_name
 --- | ---
 user email | group or role names (comma separated list as string)
 
+to run the imports
+```
+cd .../dp-identity-api/scripts/users/
 
+export FILENAME="<ENVIRONMENT>/<filename>"
+export S3_BUCKET=<s3_bucket>
+export S3_BASE_DIR=""
+export S3_REGION=<s3_region>
+export USER_POOL_ID={eu-west-1_Rnma9lp2q}
 
+go run restore_groups.go
+```
 
 **Note** *don't forget to unset the environmental variables that had been set*
-
