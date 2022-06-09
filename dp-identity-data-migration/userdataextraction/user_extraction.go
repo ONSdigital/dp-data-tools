@@ -290,7 +290,7 @@ func ExtractUserData() {
 		os.Exit(1)
 	}
 
-	fmt.Println("========= Uploaded fules to S3 =============")
+	fmt.Println("========= Uploaded files to S3 =============")
 	deleteFile(conf.validUsersFileName)
 	deleteFile(conf.invalidUsersFileName)
 

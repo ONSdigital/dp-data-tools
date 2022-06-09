@@ -129,7 +129,7 @@ func (c config) processGroups(groupList zebedee.TeamsList) {
 	fmt.Println("Actual row count: - ", len(records)-1)
 	fmt.Println("=========")
 
-	fmt.Println("Uploading", c.groupsFilename, "to s3")
+	fmt.Println("Uploading", c.environment+"/"+c.groupsFilename, "to s3")
 
 	s3err := uploadFile(c.groupsFilename, c.s3Bucket, c.environment+"/"+c.groupsFilename, c.s3Region)
 	if s3err != nil {
@@ -198,7 +198,7 @@ func (c config) processGroupsUsers(groupList zebedee.TeamsList, userList []zebed
 	fmt.Println("Actual row count: - ", len(records)-1)
 	fmt.Println("=========")
 
-	fmt.Println("Uploading", c.groupUsersFilename, "to s3")
+	fmt.Println("Uploading", c.environment+"/"+c.groupUsersFilename, "to s3")
 
 	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.environment+"/"+c.groupUsersFilename, c.s3Region)
 	if s3err != nil {
@@ -306,7 +306,6 @@ func convertToSlice_UserGroup(input userGroupCSV) []string {
 
 func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
-
 	uploader := s3manager.NewUploader(sess)
 
 	f, err := os.Open(fileName)

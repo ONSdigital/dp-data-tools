@@ -19,7 +19,7 @@ We are going to need to split the names to first and last as best as we can (doe
 two terminal windows are required  one for the tunnel, another to run extracts 
 1. Set Up and Run Tunnel
     If using localhost start the apps required to run local florence/zebedee (There is no need to start tunnel).
-    If using an remote environment version
+    If using a remote environment version
     ```shell
     dp remote allow <environment>
     dp ssh <environment> publishing 1 -p 10050:10050
@@ -28,10 +28,10 @@ two terminal windows are required  one for the tunnel, another to run extracts
     ``` shell 
     export environment=<'localhost' 'develop' 'prod' 'production' 'sandbox'>
     if environment = localhost 
-        export zebedee_host=""http://localhost:8082"" 
+        export zebedee_host="http://localhost:8082" 
         export email_domains="gmail.com,ons.gov.uk,ext.ons.gov.uk,methods.co.uk"
     else 
-        export zebedee_host=""http://localhost:10050" 
+        export zebedee_host="http://localhost:10050" 
         export email_domains="ons.gov.uk,ext.ons.gov.uk"
 
     export zebedee_user=<zebedee user admin email>
@@ -60,7 +60,7 @@ Invalid users row count: -  1
 ========= Uploading valid users file to S3 =============
 file uploaded to, https://<s3_bucket>.s3.<s3_region>.amazonaws.com/<environment>/<filename>
 file uploaded to, https://<s3_bucket>.s3.<s3_region>.amazonaws.com/<environment>/invalid_<filename>
-========= Uploaded fules to S3 =============
+========= Uploaded files to S3 =============
 ```
 
 ####Files
