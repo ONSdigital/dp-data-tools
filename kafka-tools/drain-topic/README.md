@@ -8,7 +8,7 @@ To drain a topic in MSK, we use a
 [dp-kafka example consumer](https://github.com/ONSdigital/dp-kafka) as our app.
 
 The defaults for the process below will drain the `observation-imported` topic
-(for the `dp-observation-importer` app) on the `develop` env. Follow these steps:
+(for the `dp-observation-importer` app) on the `sandbox` env. Follow these steps:
 
 ## Prerequisites
 
@@ -53,7 +53,7 @@ The makefile `kafka-tools/drain-topic/Makefile` tries to keep this as simple as 
 To drain the *default* topic (the `observation-imported` topic):
 
 ```bash
-make drain ENV=develop       # or ENV=production
+make drain ENV=sandbox       # or ENV=prod
 ```
 
 *Alternatively*, we might wish to drain a *non-default* topic,
@@ -66,7 +66,7 @@ For the `import-observations-inserted` topic, the consumer app is: `dp-import-tr
 and the *drain* step would therefore be:
 
 ```bash
-make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker ENV=develop       # or ENV=production
+make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker ENV=sandbox       # or ENV=prod
 ```
 
 Hit **Ctrl-C** to stop the consumer once it acquiesces (i.e. no more messages to consume).
@@ -76,7 +76,7 @@ Hit **Ctrl-C** to stop the consumer once it acquiesces (i.e. no more messages to
 This will remove files that were copied onto the environment by running the `make drain` target and any files built locally from the same command:
 
 ```bash
-make clean ENV=develop       # or ENV=production
+make clean ENV=sandbox       # or ENV=prod
 ```
 
 ### In nomad, restart the stopped service

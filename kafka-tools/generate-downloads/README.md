@@ -15,7 +15,7 @@ Queue the message _inside the environment_ (or - deprecated - _locally_ using an
 To run the program inside the environment (change the values to suit):
 
 ```shell
-$ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authoritay" VERSION=2 EDITION=2021 ENV=production
+$ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authoritay" VERSION=2 EDITION=2021 ENV=prod
 # ...
 ```
 

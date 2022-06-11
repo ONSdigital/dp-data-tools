@@ -27,7 +27,7 @@ In this directory, run
 ```shell
 $ make run ENV=$ENV_NAME
 #   e.g.
-$ make run ENV=develop
+$ make run ENV=sandbox
 ## Hit <Enter> to terminate the app
 ```
 

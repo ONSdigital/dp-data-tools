@@ -3,7 +3,7 @@
 SHELL=bash
 APP=generate-downloads
 
-ENV?=develop
+ENV?=sandbox
 INSTANCE_ID?=8e4b7e60-1136-4da4-bcb8-479c71a4aafc
 DATASET_ID?=uk-spending-on-cards
 EDITION?=time-series
