@@ -2,7 +2,7 @@ SHELL=bash
 
 # some vars are 'export'ed because ./scripts/ensure_vars needs them
 
-export ENV?=develop
+export ENV?=sandbox
 export SUBNET?=publishing
 
 # APP is in dp-kafka/examples

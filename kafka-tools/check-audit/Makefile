@@ -1,7 +1,7 @@
 APP=check-audit
 BUILD=build
 
-ENV?=develop
+ENV?=sandbox
 HOST_NUM=publishing 3
 CERT_D?=../../../dp-setup/csr/private
 
