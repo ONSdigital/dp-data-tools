@@ -26,8 +26,8 @@ SECRETS_APP?=dp-dataset-api-publishing
 SECRETS_JSON=$(DP_CONFIGS)/secrets/$(ENV)/$(SECRETS_APP).json
 
 .PHONY: all
-all:
-	make GOOS=linux build deploy clean-deploy
+all: clean
+	make GOOS=linux build deploy clean
 
 .PHONY: pre-build
 pre-build:
@@ -57,9 +57,12 @@ deploy: build script
 	dp ssh $(ENV) $(host_num) -- 'bash -c "cd $(host_bin) && source ./$(APP).sh && ./$(APP)"'
 
 .PHONY: clean
-clean:
-	rm -r $(BUILD)
+clean: clean-deploy clean-build
+
+.PHONY: clean-build
+clean-build:
+	[[ ! -d $(BUILD) ]] || rm -r $(BUILD)
 
 .PHONY: clean-deploy
-clean-deploy: clean
-	dp ssh $(ENV) $(host_num) -- rm -r $(host_bin)
+clean-deploy:
+	dp ssh $(ENV) $(host_num) -- bash -c '"[[ ! -d $(host_bin) ]] || rm -r $(host_bin)"'

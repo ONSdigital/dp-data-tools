@@ -26,7 +26,7 @@ The above `make` does the following:
 - `dp scp` the assets onto the env
 - `dp ssh` onto the env to run the assets
 - cleans up (the env) on success
-  - if it fails, you should tidy up with: `make clean-deploy ENV=...`
+  - if it fails, you should tidy up with: `make clean ENV=...` :warning:
 
 ### Run locally
 
