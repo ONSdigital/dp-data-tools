@@ -30,7 +30,7 @@ all: clean
 	make GOOS=linux build deploy clean
 
 .PHONY: pre-build
-pre-build:
+pre-build: secrets
 	mkdir -p $(BUILD_ARCH)
 
 .PHONY: build
@@ -45,9 +45,13 @@ script: pre-build
 run: script
 	. $(BUILD_SCRIPT); go run -race main.go
 
+.PHONY: secrets
+secrets:
+	[[ -f $(SECRETS_JSON) ]] || gpg $(SECRETS_JSON).asc
+
 .PHONY: env-vars
 env-vars:
-	@jq -r ' . as $$o |  keys | .[] | "export " + . + "=" + ($$o[.] | tojson)' $(SECRETS_JSON) | sed 's/\\n/\n/g'
+	@set -o pipefail; jq -r ' . as $$o |  keys | .[] | "export " + . + "=" + ($$o[.] | tojson)' $(SECRETS_JSON) | sed 's/\\n/\n/g'
 	@echo export INSTANCE_ID="$(INSTANCE_ID)" DATASET_ID="$(DATASET_ID)"
 	@echo export VERSION=$(VERSION) EDITION="$(EDITION)" TIMEOUT=$(TIMEOUT)
 
