@@ -6,7 +6,7 @@
 
 You will need different values (and possibly more env vars) than shown in the examples and/or `Makefile`, below, see [config](./main.go) for the defaults.
 
-The `INSTANCE_ID` used below should be provided by the publishing team who raised to problem. If no one in publishing is available with the technical knowledge of how to get the `INSTANCE_ID`, see section below `Getting the INSTANCE_ID, a worked example`
+The `INSTANCE_ID` used below should be provided by the publishing team who raised the problem. If no one in publishing is available with the technical knowledge of how to get the `INSTANCE_ID`, see section below `Getting the INSTANCE_ID, a worked example`
 
 ## Queueing the message
 
@@ -58,10 +58,10 @@ Then log into the box in production that has the `mongo` command available:
 dp ssh prod publishing 10
 ```
 
-and run this command (substituting the decrypted password where indicated):
+and run this command (substituting the decrypted password where indicated) with a space at the beginning og the line so that the password is not left in the history:
 
 ```shell
-mongo admin --tls --host prod-docdb-cluster.cluster-cqs87nhaxvnx.eu-west-2.docdb.amazonaws.com --username root --password <Place decrypted docdb_login_password here> --tlsCAFile "/etc/docdb/rds-combined-ca-bundle.pem"
+ mongo admin --tls --host prod-docdb-cluster.cluster-cqs87nhaxvnx.eu-west-2.docdb.amazonaws.com --username root --password <Place decrypted docdb_login_password here> --tlsCAFile "/etc/docdb/rds-combined-ca-bundle.pem"
 ```
 
 NOTE: If the above command fails -
