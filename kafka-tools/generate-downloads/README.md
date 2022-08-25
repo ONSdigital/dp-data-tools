@@ -74,7 +74,7 @@ Once you get this prompt:
 
 `rs0:PRIMARY>`
 
-You can enter for example these two commands (adapt to your needs by adjusting the string `weekly-deaths-local-authority` to the equivalent in the URI provided in the support ticket URI that you have):
+You can enter for example these two commands (adapt to your needs by adjusting the string `weekly-deaths-local-authority` to the equivalent in the URI provided in the support ticket URI that you have, you will also need to adjust the date to something like 5 days before the support ticket date):
 
 ```shell
 use datasets
