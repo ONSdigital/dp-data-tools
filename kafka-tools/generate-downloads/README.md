@@ -12,7 +12,7 @@ Queue the message _inside the environment_ (or - deprecated - _locally_ using an
 
 ### Run in the environment
 
-To run the program inside the environment (change the values to suit):
+Run the following on your laptop, from this directory, to upload and run the program inside the environment (change the values to suit):
 
 ```shell
 $ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authority" VERSION=2 EDITION=2021 ENV=prod
@@ -52,6 +52,20 @@ In the support ticket that is missing the `INSTANCE_ID`, the publishing team had
 
 `https://www.ons.gov.uk/datasets/weekly-deaths-local-authority/editions/2022/versions/32`
 
+You can now use Mongo or curl to obtain the ID.
+
+### Using mongo
+
+You can access mongodb using either
+
+- your local client
+  - see [accessing mongodb using robo3t](https://github.com/ONSdigital/dp-operations/blob/main/guides/mongodb.md)
+  - select the `datasets` database
+  - then [query mongodb](#query-mongodb), below
+- or login to a host in the env and run the `mongo` client
+
+#### Login to the env to use mongo client
+
 First, get the mongodb host, user and password for the datasets database. You can find them, for example, by decrypting the [secrets for dp-dataset-api-web](https://github.com/ONSdigital/dp-configs/blob/main/secrets/prod/dp-dataset-api-web.json.asc).
 
 Then, log into the box in production that has the `mongo` command available:
@@ -60,7 +74,7 @@ Then, log into the box in production that has the `mongo` command available:
 dp ssh prod publishing 10
 ```
 
-and run the following command using the credentials decrypted from the secrets. Please note there is a space at the beginning of the line so that the password is not left in the history.
+and run the following command using the credentials decrypted from the secrets. Please note there is a space at the beginning of the line so that the password is not left in the history. :warning:
 
 ```shell
  mongo datasets --tls --host <MONGO_HOST> --username <MONGO_USER> --password <MONGO_PASSWORD> --tlsCAFile "/etc/docdb/rds-combined-ca-bundle.pem"
@@ -68,14 +82,41 @@ and run the following command using the credentials decrypted from the secrets. 
 
 _NOTE: If boxes in Prod are rebuilt the number `10` used above may change and you will need to try other numbers and re-enter the mongo command until you get the mongo prompt._
 
-Once you get this prompt:
+You should see this prompt:
 
 `rs0:PRIMARY>`
 
-You can enter for example the following command. Adapt it to your needs by adjusting the `links.dataset.id`, `links.edition.id` and `links.version.id` to the relevant values provided in the support ticket:
+#### Query mongodb
 
-```shell
+You can enter, for example, the following command. Adapt it to your needs by adjusting the `links.dataset.id`, `links.edition.id` and `links.version.id` to the relevant values provided in the support ticket:
+
+```javascript
 db.getCollection('instances').find({"state":"published", "links.dataset.id":/weekly-deaths-local-authority/, "links.edition.id":"2022", "links.version.id":"32"})
 ```
 
 It will return the required instance and you can now take a note of its `"id"`.
+
+### Using the dataset API
+
+Login to the `publishing_mount` host: `dp ssh prod publishing_mount 1`
+and (on that host) you will need to be root (type `sudo -s`).
+
+Find, and source (into that shell) the secrets for zebedee:
+
+```shell
+cd /var/lib/nomad/alloc/*/zebedee/local
+. ./vars
+```
+
+Now, use `curl` to query the dataset API to obtain the required ID
+(the below command uses the env var `$SERVICE_AUTH_TOKEN` which has been set above, so that part is copied _verbatim_, change only the URL)
+
+```shell
+curl -s -H "Authorization: Bearer $SERVICE_AUTH_TOKEN" localhost:10400/datasets/weekly-deaths-local-authority/editions/2022/versions/32 | jq .
+```
+
+confirm that that the above shows the correct document, and note its `"id"`, or extract that ID with the below:
+
+```shell
+curl -s -H "Authorization: Bearer $SERVICE_AUTH_TOKEN" localhost:10400/datasets/weekly-deaths-local-authority/editions/2022/versions/32 | jq -r .id
+```
