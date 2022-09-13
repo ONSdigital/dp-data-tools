@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/google/uuid"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -17,11 +19,19 @@ type config struct {
 	environment,
 	groupsFilename,
 	groupUsersFilename,
+	validUsersFileName,
 	host,
 	pword,
 	user,
 	s3Bucket,
 	s3Region string
+}
+
+type amendedGroupList struct {
+	ID               string
+	cognitoGroupName string
+	Name             string
+	Members          []string
 }
 
 func ExtractGroupsData() {
@@ -37,61 +47,73 @@ func ExtractGroupsData() {
 
 	sess, err := zebCli.OpenSession(c)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
-	// groups process
+	// get teams from zebedee
 	groupList, err := zebCli.ListTeams(sess)
 	if err != nil {
-		fmt.Println("Get data from zebedee", err)
+		log.Println("Get data from zebedee", err)
 		os.Exit(1)
 	}
 
-	userList, err := zebCli.GetUsers(sess)
+	// get valid users from user_extract
+	usersCSV, err := os.Open(conf.validUsersFileName)
 	if err != nil {
-		fmt.Println("Theres been an issue", err)
-		os.Exit(1)
+		log.Println(err)
 	}
+	defer usersCSV.Close()
+	userReader := csv.NewReader(usersCSV)
+	userReader.Read()
+	rows, err := userReader.ReadAll()
+	if err != nil {
+		log.Println("Cannot read CSV file:", err)
+	}
+	users := map[string]string{}
+	for _, row := range rows {
+		users[row[10]] = row[0]
+	}
+
 	tmpUserGroups := make(map[string][]string)
-	for _, user := range userList {
-		_, isKeyPresent := tmpUserGroups[user.Email]
+	for k := range users {
+		_, isKeyPresent := tmpUserGroups[k]
 		if !isKeyPresent {
-			tmpUserGroups[user.Email] = make([]string, 0)
+			tmpUserGroups[k] = make([]string, 0)
 		}
-		permissions, err := zebCli.GetPermissions(sess, user.Email)
+		permissions, err := zebCli.GetPermissions(sess, k)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		if permissions.Admin {
-			tmpUserGroups[user.Email] = append(tmpUserGroups[user.Email], "role-admin")
+			tmpUserGroups[k] = append(tmpUserGroups[k], "role-admin")
 		}
 
 		if permissions.Editor {
-			tmpUserGroups[user.Email] = append(tmpUserGroups[user.Email], "role-publisher")
+			tmpUserGroups[k] = append(tmpUserGroups[k], "role-publisher")
 		}
 	}
 
-	conf.processGroups(groupList)
-	conf.processGroupsUsers(groupList, userList, tmpUserGroups)
+	amendedGroupList := conf.processGroups(groupList)
+	conf.processGroupsUsers(amendedGroupList, users, tmpUserGroups)
 }
 
-func (c config) processGroups(groupList zebedee.TeamsList) {
+func (c config) processGroups(groupList zebedee.TeamsList) []amendedGroupList {
+	var returnList []amendedGroupList
 	groupsCSVFile, err := os.Create(c.groupsFilename)
 	if err != nil {
-		fmt.Printf("failed creating file: %s", err)
+		log.Printf("failed creating file: %s", err)
 		os.Exit(1)
 	}
 
 	csvwriter := csv.NewWriter(groupsCSVFile)
 	if write_err := csvwriter.Write(convertToSlice_Group(group_header)); write_err != nil {
-		fmt.Printf("failed writing file: %s", err)
+		log.Printf("failed writing file: %s", err)
 		os.Exit(1)
 	}
-
 	for _, zebedeegroup := range groupList.Teams {
-		tmp := group{
-			GroupName:        fmt.Sprintf("%v", zebedeegroup.ID),
+		var tmp = group{
+			GroupName:        uuid.NewString(),
 			UserPoolId:       "",
 			Description:      zebedeegroup.Name,
 			RoleArn:          "",
@@ -99,70 +121,82 @@ func (c config) processGroups(groupList zebedee.TeamsList) {
 			LastModifiedDate: "",
 			CreationDate:     "",
 		}
+		var tmpReturn = amendedGroupList{
+			ID:               zebedeegroup.ID,
+			cognitoGroupName: tmp.GroupName,
+			Name:             zebedeegroup.Name,
+			Members:          zebedeegroup.Members,
+		}
+		returnList = append(returnList, tmpReturn)
 		if write_err := csvwriter.Write(convertToSlice_Group(tmp)); write_err != nil {
-			fmt.Printf("failed writing file: %s", err)
+			log.Printf("failed writing file: %s", err)
 			os.Exit(1)
 		}
+
 	}
 	csvwriter.Flush()
-	groupsCSVFile.Close()
+	err = groupsCSVFile.Close()
+	if err != nil {
+		log.Printf("failed closing file: %s", err)
+		os.Exit(1)
+	}
 
-	fmt.Println("========= ", c.groupsFilename, "file validiation =============")
+	log.Println("========= ", c.groupsFilename, "file validiation =============")
 	f, err := os.Open(c.groupsFilename)
 	if err != nil {
-		fmt.Printf("failed opening file: %s", err)
+		log.Printf("failed opening file: %s", err)
 		os.Exit(1)
 	}
 	records, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		fmt.Printf("failed reading file: %s", err)
+		log.Printf("failed reading file: %s", err)
 		os.Exit(1)
 	}
 
 	if len(records)-1 != len(groupList.Teams) || csvwriter.Error() != nil {
-		fmt.Println("There has been an error... ")
-		fmt.Println("csv Errors ", csvwriter.Error())
-		fmt.Println(len(records)-1, len(records))
+		log.Println("There has been an error... ")
+		log.Println("csv Errors ", csvwriter.Error())
+		log.Println(len(records)-1, len(records))
 	}
 
-	fmt.Println("Expected row count: - ", len(groupList.Teams))
-	fmt.Println("Actual row count: - ", len(records)-1)
-	fmt.Println("=========")
+	log.Println("Expected row count: - ", len(groupList.Teams))
+	log.Println("Actual row count: - ", len(records)-1)
+	log.Println("=========")
 
-	fmt.Println("Uploading", c.environment+"/"+c.groupsFilename, "to s3")
+	log.Println("Uploading", c.groupsFilename, "to s3")
 
-	s3err := uploadFile(c.groupsFilename, c.s3Bucket, c.environment+"/"+c.groupsFilename, c.s3Region)
+	s3err := uploadFile(c.groupsFilename, c.s3Bucket, c.groupsFilename, c.s3Region)
 	if s3err != nil {
-		fmt.Println("Theres been an issue in uploading to s3")
-		fmt.Println(s3err)
-		os.Exit(1)
+		log.Println("Theres been an issue in uploading to s3")
+		log.Println(s3err)
+		// os.Exit(1)
+	} else {
+		log.Println("Uploaded", c.groupsFilename, "to s3")
+		// deleteFile(c.groupsFilename)
 	}
-	fmt.Println("Uploaded", c.groupsFilename, "to s3")
-
-	deleteFile(c.groupsFilename)
+	return returnList
 }
 
-func (c config) processGroupsUsers(groupList zebedee.TeamsList, userList []zebedee.User, userRoles map[string][]string) {
-
+func (c config) processGroupsUsers(groupList []amendedGroupList, userList map[string]string, userRoles map[string][]string) {
 	usergroupsCSVFile, err := os.Create(c.groupUsersFilename)
 	if err != nil {
-		fmt.Printf("failed creating file: %s", err)
+		log.Printf("failed creating file: %s", err)
 		os.Exit(1)
 	}
 	csvwriter := csv.NewWriter(usergroupsCSVFile)
 	if write_err := csvwriter.Write(convertToSlice_UserGroup(headerUserGroup)); write_err != nil {
-		fmt.Printf("failed writing file: %s", err)
+		log.Printf("failed writing file: %s", err)
 		os.Exit(1)
 	}
-	for _, zebedeegroup := range groupList.Teams {
+	for _, zebedeegroup := range groupList {
 		for _, member := range zebedeegroup.Members {
 			_, isKeyPresent := userRoles[member]
 			if !isKeyPresent {
-				fmt.Println("---")
-				fmt.Println(member, "is not a user???")
-				fmt.Println("---")
+				log.Println("---")
+				log.Println(member, "is not a user???")
+				log.Println("---")
 			} else {
-				userRoles[member] = append(userRoles[member], fmt.Sprintf("%v", zebedeegroup.ID))
+				userRoles[member] = append(userRoles[member], fmt.Sprintf("%v", zebedeegroup.cognitoGroupName))
 			}
 		}
 	}
@@ -179,36 +213,39 @@ func (c config) processGroupsUsers(groupList zebedee.TeamsList, userList []zebed
 
 	f, err := os.Open(c.groupUsersFilename)
 	if err != nil {
-		fmt.Printf("failed opening file: %s", err)
+		log.Printf("failed opening file: %s", err)
 		os.Exit(1)
 	}
 	records, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		fmt.Printf("failed reading file: %s", err)
+		log.Printf("failed reading file: %s", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("========= ", c.groupUsersFilename, "file validation =============")
+	log.Println("========= ", c.groupUsersFilename, "file validation =============")
 	if len(records)-1 != len(userList) || csvwriter.Error() != nil {
-		fmt.Println("There has been an error... ")
-		fmt.Println("csv Errors ", csvwriter.Error())
+		log.Println("There has been an error... ")
+		log.Println("csv Errors ", csvwriter.Error())
 	}
 
-	fmt.Println("Expected row count: - ", len(userList))
-	fmt.Println("Actual row count: - ", len(records)-1)
-	fmt.Println("=========")
+	log.Println("Expected row count: - ", len(userList))
+	log.Println("Actual row count: - ", len(records)-1)
+	log.Println("=========")
 
-	fmt.Println("Uploading", c.environment+"/"+c.groupUsersFilename, "to s3")
+	log.Println("Uploading", c.environment+"/"+c.groupUsersFilename, "to s3")
 
 	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.environment+"/"+c.groupUsersFilename, c.s3Region)
 	if s3err != nil {
-		fmt.Println("Theres been an issue in uploading to s3")
-		fmt.Println(s3err)
-		os.Exit(1)
-	}
-	fmt.Println("Uploaded", c.groupUsersFilename, "to s3")
+		log.Println("Theres been an issue in uploading to s3")
+		log.Println(s3err)
+		// os.Exit(1)
+	} else {
+		log.Println("Uploaded", c.groupUsersFilename, "to s3")
+		deleteFile(c.groupUsersFilename)
+		deleteFile(c.validUsersFileName)
+		deleteFile(c.groupsFilename)
 
-	deleteFile(c.groupUsersFilename)
+	}
 }
 
 func readConfig() *config {
@@ -217,39 +254,42 @@ func readConfig() *config {
 		pair := strings.SplitN(e, "=", 2)
 		switch pair[0] {
 		case "environment":
+			missingVariables("environment", pair[1])
 			conf.environment = pair[1]
+		case "validusers_filename":
+			missingVariables("validusers_filename", pair[1])
+			conf.validUsersFileName = pair[1]
 		case "groups_filename":
+			missingVariables("groups_filename", pair[1])
 			conf.groupsFilename = pair[1]
 		case "groupusers_filename":
+			missingVariables("groupusers_filename", pair[1])
 			conf.groupUsersFilename = pair[1]
 		case "zebedee_user":
+			missingVariables("zebedee_user", pair[1])
 			conf.user = pair[1]
 		case "zebedee_pword":
+			missingVariables("zebedee_pword", pair[1])
 			conf.pword = pair[1]
 		case "zebedee_host":
+			missingVariables("zebedee_host", pair[1])
 			conf.host = pair[1]
 		case "s3_bucket":
+			missingVariables("s3_bucket", pair[1])
 			conf.s3Bucket = pair[1]
 		case "s3_region":
+			missingVariables("s3_region", pair[1])
 			conf.s3Region = pair[1]
 		}
 	}
 
-	missing_variables("environment", conf.environment)
-	missing_variables("groups_filename", conf.groupsFilename)
-	missing_variables("groupusers_filename", conf.groupUsersFilename)
-	missing_variables("zebedee_user", conf.user)
-	missing_variables("zebedee_pword", conf.pword)
-	missing_variables("zebedee_host", conf.host)
-	missing_variables("s3_bucket", conf.s3Bucket)
-	missing_variables("s3_region", conf.s3Region)
-
 	return conf
 }
 
-func missing_variables(envValue string, value string) bool {
-	if len(value) == 0 {
-		fmt.Println("Please set Environment Variables ", envValue)
+func missingVariables(envValue string, value string) bool {
+	log.Println(envValue, value, len(value))
+	if len(value) < 1 {
+		log.Println("Please set Environment Variables ", envValue)
 		os.Exit(3)
 	}
 	return true
@@ -321,21 +361,31 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 	if err != nil {
 		return fmt.Errorf("failed to upload file, %+v", err)
 	}
-	fmt.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
+	log.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
 	return nil
 }
 
 func deleteFile(fileName string) {
 	err := os.Remove(fileName)
 	if err != nil {
-		fmt.Printf("failed deleting file: %s", err)
+		log.Printf("failed deleting file: %s", err)
 		os.Exit(1)
 	}
 }
 
 func main() {
 	start := time.Now()
+	logFile, err := os.OpenFile("./groupslog.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(logFile)
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+
+	log.Println("log file created")
+
 	ExtractGroupsData()
+
 	elapsed := time.Since(start)
-	fmt.Printf("Elapse time %s\n", elapsed)
+	log.Printf("Elapse time %s\n", elapsed)
 }

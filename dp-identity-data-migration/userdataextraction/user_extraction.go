@@ -3,73 +3,76 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"strings"
-
+	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-
+	"github.com/google/uuid"
+	"log"
 	"os"
-
+	"strings"
 	"time"
-
-	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
-	uuid "github.com/google/uuid"
 )
 
 type config struct {
 	environment,
-	validUsersFileName, invalidUsersFileName, host, pword, user string
+	validUsersFileName,
+	invalidUsersFileName,
+	host,
+	pword,
+	user string
 	emailDomains       []string
 	s3Bucket, s3Region string
 }
 
-var header = cognito_user{
-	username:              "cognito:username",
-	name:                  "name",
-	given_name:            "given_name",
-	family_name:           "family_name",
-	middle_name:           "middle_name",
-	nickname:              "nickname",
-	preferred_username:    "preferred_username",
-	profile:               "profile",
-	picture:               "picture",
-	website:               "website",
-	email:                 "email",
-	email_verified:        "email_verified",
-	gender:                "gender",
-	birthdate:             "birthdate",
-	zoneinfo:              "zoneinfo",
-	locale:                "locale",
-	phone_number:          "phone_number",
-	phone_number_verified: "phone_number_verified",
-	address:               "address",
-	updated_at:            "updated_at",
-	mfa_enabled:           "cognito:mfa_enabled",
+type cognitoUser struct {
+	username            string `csv:"cognito:username"`
+	name                string `csv:"name"`
+	givenName           string `csv:"given_name"`
+	familyName          string `csv:"family_name"`
+	middleName          string `csv:"middle_name"`
+	nickname            string `csv:"nickname"`
+	preferredUsername   string `csv:"preferred_username"`
+	profile             string `csv:"profile"`
+	picture             string `csv:"picture"`
+	website             string `csv:"website"`
+	email               string `csv:"email"`
+	emailVerified       string `csv:"email_verified"`
+	gender              string `csv:"gender"`
+	birthdate           string `csv:"birthdate"`
+	zoneInfo            string `csv:"zoneinfo"`
+	locale              string `csv:"locale"`
+	phoneNumber         string `csv:"phone_number"`
+	phoneNumberVerified string `csv:"phone_number_verified"`
+	address             string `csv:"address"`
+	updatedAt           string `csv:"updated_at"`
+	mfaEnabled          string `csv:"cognito:mfa_enabled"`
+	enabled             string `csv:"enabled"`
 }
 
-type cognito_user struct {
-	username,
-	name,
-	given_name,
-	family_name,
-	middle_name,
-	nickname,
-	preferred_username,
-	profile,
-	picture,
-	website,
-	email,
-	email_verified,
-	gender,
-	birthdate,
-	zoneinfo,
-	locale,
-	phone_number,
-	phone_number_verified,
-	address,
-	updated_at,
-	mfa_enabled string
+var header = cognitoUser{
+	username:            "cognito:username",
+	name:                "name",
+	givenName:           "given_name",
+	familyName:          "family_name",
+	middleName:          "middle_name",
+	nickname:            "nickname",
+	preferredUsername:   "preferred_username",
+	profile:             "profile",
+	picture:             "picture",
+	website:             "website",
+	email:               "email",
+	emailVerified:       "email_verified",
+	gender:              "gender",
+	birthdate:           "birthdate",
+	zoneInfo:            "zoneinfo",
+	locale:              "locale",
+	phoneNumber:         "phone_number",
+	phoneNumberVerified: "phone_number_verified",
+	address:             "address",
+	updatedAt:           "updated_at",
+	mfaEnabled:          "cognito:mfa_enabled",
+	enabled:             "enabled",
 }
 
 func readConfig() *config {
@@ -78,108 +81,110 @@ func readConfig() *config {
 		pair := strings.SplitN(e, "=", 2)
 		switch pair[0] {
 		case "environment":
+			missingVariables("environment", pair[1])
 			conf.environment = pair[1]
-		case "filename":
+		case "validusers_filename":
+			missingVariables("validusers_filename", pair[1])
 			conf.validUsersFileName = pair[1]
-			conf.invalidUsersFileName = fmt.Sprintf("invalid_%s", pair[1])
+		case "invalidusers_filename":
+			missingVariables("invalidusers_filename", pair[1])
+			conf.invalidUsersFileName = pair[1]
 		case "zebedee_user":
+			missingVariables("zebedee_user", pair[1])
 			conf.user = pair[1]
 		case "zebedee_pword":
+			missingVariables("zebedee_pword", pair[1])
 			conf.pword = pair[1]
 		case "zebedee_host":
-			missing_variables("zebedee_host", pair[1])
+			missingVariables("zebedee_host", pair[1])
 			conf.host = pair[1]
 		case "email_domains":
+			missingVariables("email_domains", pair[1])
 			conf.emailDomains = strings.Split(pair[1], ",")
 		case "s3_bucket":
+			missingVariables("s3_bucket", pair[1])
 			conf.s3Bucket = pair[1]
 		case "s3_region":
+			missingVariables("s3_region", pair[1])
 			conf.s3Region = pair[1]
 		}
 	}
 
-	missing_variables("environment", conf.environment)
-	missing_variables("filename", conf.validUsersFileName)
-	missing_variables("zebedee_user", conf.user)
-	missing_variables("zebedee_pword", conf.pword)
-	missing_variables("zebedee_host", conf.host)
-	missing_variables("s3_bucket", conf.s3Bucket)
-	missing_variables("s3_region", conf.s3Region)
 	return conf
 }
 
-func missing_variables(envValue string, value string) bool {
+func missingVariables(envValue string, value string) bool {
 	if len(value) == 0 {
-		fmt.Println("Please set Environment Variables ", envValue)
+		log.Println("Please set Environment Variables ", envValue)
 		os.Exit(3)
 	}
 	return true
 }
 
-func convert_to_slice(input cognito_user) []string {
+func convertToSlice(input cognitoUser) []string {
 	return []string{
 		input.username,
 		input.name,
-		input.given_name,
-		input.family_name,
-		input.middle_name,
+		input.givenName,
+		input.familyName,
+		input.middleName,
 		input.nickname,
-		input.preferred_username,
+		input.preferredUsername,
 		input.profile,
 		input.picture,
 		input.website,
 		input.email,
-		input.email_verified,
+		input.emailVerified,
 		input.gender,
 		input.birthdate,
-		input.zoneinfo,
+		input.zoneInfo,
 		input.locale,
-		input.phone_number,
-		input.phone_number_verified,
+		input.phoneNumber,
+		input.phoneNumberVerified,
 		input.address,
-		input.updated_at,
-		input.mfa_enabled,
+		input.updatedAt,
+		input.mfaEnabled,
+		input.enabled,
 	}
 }
 
-func process_zebedee_users(validUsersWriter *csv.Writer, invalidUsersWriter *csv.Writer, userList []zebedee.User, validEmailDomains []string) (int, int) {
+func processZebedeeUsers(validUsersWriter *csv.Writer, invalidUsersWriter *csv.Writer, userList []zebedee.User, validEmailDomains []string) (int, int) {
 	var validUsersCount, invalidUsersCount int
 
 	for _, user := range userList {
-		var (
-			csvline cognito_user
-		)
-		csvline.username = uuid.NewString()
-		csvline.email = user.Email
+		var csvLine cognitoUser
+		csvLine.username = uuid.NewString()
+		csvLine.email = user.Email
 
 		domain := strings.Split(user.Email, "@")
 		names := strings.Split(domain[0], ".")
 
 		if len(names) == 2 {
-			csvline.given_name = names[0]
-			csvline.family_name = names[1]
+			csvLine.givenName = names[0]
+			csvLine.familyName = names[1]
 		} else if len(names) > 2 {
-			csvline.given_name = names[0]
-			csvline.family_name = names[2]
+			csvLine.givenName = names[0]
+			csvLine.familyName = names[2]
 		} else {
-			csvline.given_name = ""
-			csvline.family_name = names[0]
+			csvLine.givenName = ""
+			csvLine.familyName = names[0]
 		}
 
-		csvline.mfa_enabled = "FALSE"
-		csvline.phone_number_verified = "FALSE"
-		csvline.email_verified = "TRUE"
+		csvLine.mfaEnabled = "FALSE"
+		csvLine.enabled = "TRUE"
+		csvLine.phoneNumberVerified = "FALSE"
+		csvLine.emailVerified = "TRUE"
 
-		userDetails := convert_to_slice(csvline)
+		userDetails := convertToSlice(csvLine)
 		if validateEmailId(validEmailDomains, user.Email) {
 			if err := validUsersWriter.Write(userDetails); err != nil {
-				fmt.Println("error writing record to csv:", err)
+				log.Println("error writing record to csv:", err)
 			} else {
 				validUsersCount += 1
 			}
 		} else {
 			if err := invalidUsersWriter.Write(userDetails); err != nil {
-				fmt.Println("error writing record to csv:", err)
+				log.Println("error writing record to csv:", err)
 			} else {
 				invalidUsersCount += 1
 			}
@@ -218,7 +223,7 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 	if err != nil {
 		return fmt.Errorf("failed to upload file: %+v", err)
 	}
-	fmt.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
+	log.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
 	return nil
 }
 
@@ -235,63 +240,81 @@ func ExtractUserData() {
 
 	sess, err := zebCli.OpenSession(c)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
 	userList, err := zebCli.GetUsers(sess)
 	if err != nil {
-		fmt.Println("Theres been an issue")
-		fmt.Println(err)
+		log.Println("Theres been an issue")
+		log.Println(err)
 		os.Exit(1)
 	}
-
 	validUsersFile := createFile(conf.validUsersFileName)
 	validUsersWriter := csv.NewWriter(validUsersFile)
 
 	invalidUsersFile := createFile(conf.invalidUsersFileName)
 	invalidUsersWriter := csv.NewWriter(invalidUsersFile)
 
-	csvheader := convert_to_slice(header)
-	validUsersWriter.Write(csvheader)
-	invalidUsersWriter.Write(csvheader)
+	csvHeader := convertToSlice(header)
+	err = validUsersWriter.Write(csvHeader)
+	if err != nil {
+		log.Println("Theres been an issue")
+		log.Println(err)
+		os.Exit(1)
+	}
+	err = invalidUsersWriter.Write(csvHeader)
+	if err != nil {
+		log.Println("Theres been an issue")
+		log.Println(err)
+		os.Exit(1)
+	}
 
-	validUsersCount, invalidUsersCount := process_zebedee_users(validUsersWriter, invalidUsersWriter, userList, conf.emailDomains)
+	validUsersCount, invalidUsersCount := processZebedeeUsers(validUsersWriter, invalidUsersWriter, userList, conf.emailDomains)
 	validUsersWriter.Flush()
 	invalidUsersWriter.Flush()
 
-	fmt.Println("========= file validiation =============")
+	log.Println("========= file validation =============")
 	if validUsersCount+invalidUsersCount != len(userList) || validUsersWriter.Error() != nil || invalidUsersWriter.Error() != nil {
-		fmt.Println("There has been an error... ")
-		fmt.Println("valid users writer Errors ", validUsersWriter.Error())
-		fmt.Println("invalid users writer Errors ", validUsersWriter.Error())
+		log.Println("There has been an error... ")
+		log.Println("valid users writer Errors ", validUsersWriter.Error())
+		log.Println("invalid users writer Errors ", validUsersWriter.Error())
 	}
 
-	fmt.Println("Expected row count: - ", len(userList))
-	fmt.Println("Valid users row count: - ", validUsersCount)
-	fmt.Println("Invalid users row count: - ", invalidUsersCount)
-	fmt.Println("=========")
+	log.Println("Expected row count: - ", len(userList))
+	log.Println("Valid users row count: - ", validUsersCount)
+	log.Println("Invalid users row count: - ", invalidUsersCount)
+	log.Println("=========")
 
-	validUsersFile.Close()
-	invalidUsersFile.Close()
-
-	fmt.Println("========= Uploading valid users file to S3 =============")
-	s3err := uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.validUsersFileName, conf.s3Region)
+	err = validUsersFile.Close()
+	if err != nil {
+		log.Println("Theres been an issue")
+		log.Println(err)
+		os.Exit(1)
+	}
+	err = invalidUsersFile.Close()
+	if err != nil {
+		log.Println("Theres been an issue")
+		log.Println(err)
+		os.Exit(1)
+	}
+	log.Println("========= Uploading valid users file to S3 =============")
+	s3err := uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.validUsersFileName, conf.s3Region)
 	if s3err != nil {
-		fmt.Println("Theres been an issue in uploading to s3")
-		fmt.Println(s3err)
+		log.Println("Theres been an issue in uploading to s3")
+		log.Println(s3err)
 		os.Exit(1)
 	}
 
-	s3err = uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.environment+"/"+conf.invalidUsersFileName, conf.s3Region)
+	s3err = uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.invalidUsersFileName, conf.s3Region)
 	if s3err != nil {
-		fmt.Println("Theres been an issue in uploading to s3")
-		fmt.Println(s3err)
+		log.Println("Theres been an issue in uploading to s3")
+		log.Println(s3err)
 		os.Exit(1)
 	}
 
-	fmt.Println("========= Uploaded files to S3 =============")
-	deleteFile(conf.validUsersFileName)
+	log.Println("========= Uploaded files to S3 =============")
+	//deleteFile(conf.validUsersFileName)
 	deleteFile(conf.invalidUsersFileName)
 
 }
@@ -299,7 +322,7 @@ func ExtractUserData() {
 func createFile(fileName string) *os.File {
 	csvFile, err := os.Create(fileName)
 	if err != nil {
-		fmt.Printf("failed creating file: %s", err)
+		log.Printf("failed creating file: %s", err)
 		os.Exit(1)
 	}
 	return csvFile
@@ -308,13 +331,23 @@ func createFile(fileName string) *os.File {
 func deleteFile(fileName string) {
 	err := os.Remove(fileName)
 	if err != nil {
-		fmt.Printf("failed deleting file: %s", err)
+		log.Printf("failed deleting file: %s", err)
 		os.Exit(1)
 	}
 }
 func main() {
 	start := time.Now()
+	logFile, err := os.OpenFile("./userslog.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(logFile)
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+
+	log.Println("log file created")
+
 	ExtractUserData()
 	elapsed := time.Since(start)
-	fmt.Printf("Elapse time %s\n", elapsed)
+	log.Printf("Elapse time %s\n", elapsed)
+
 }
