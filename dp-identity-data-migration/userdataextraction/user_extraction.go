@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/csv"
-	"fmt"
 	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -217,7 +216,8 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 
 	f, err := os.Open(fileName)
 	if err != nil {
-		return fmt.Errorf("failed to open file %q, %+v", fileName, err)
+		log.Fatal("failed to open file %q, %+v", fileName, err)
+		return err
 	}
 
 	result, err := uploader.Upload(&s3manager.UploadInput{
@@ -226,7 +226,9 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 		Body:   f,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to upload file: %+v", err)
+		log.Fatal("failed to upload file: %+v", err)
+		return err
+
 	}
 	log.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
 	return nil

@@ -105,14 +105,12 @@ func (c config) processGroups(groupList zebedee.TeamsList) []amendedGroupList {
 	var returnList []amendedGroupList
 	groupsCSVFile, err := os.Create(c.groupsFilename)
 	if err != nil {
-		log.Printf("failed creating file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed creating file: %s", err)
 	}
 
 	csvwriter := csv.NewWriter(groupsCSVFile)
 	if write_err := csvwriter.Write(convertToSlice_Group(group_header)); write_err != nil {
-		log.Printf("failed writing file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed writing file: %s", err)
 	}
 	for _, zebedeegroup := range groupList.Teams {
 		var tmp = group{
@@ -145,13 +143,11 @@ func (c config) processGroups(groupList zebedee.TeamsList) []amendedGroupList {
 	log.Println("========= ", c.groupsFilename, "file validiation =============")
 	f, err := os.Open(c.groupsFilename)
 	if err != nil {
-		log.Printf("failed opening file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed opening file: %s", err)
 	}
 	records, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		log.Printf("failed reading file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed reading file: %s", err)
 	}
 
 	if len(records)-1 != len(groupList.Teams) || csvwriter.Error() != nil {
@@ -168,12 +164,9 @@ func (c config) processGroups(groupList zebedee.TeamsList) []amendedGroupList {
 
 	s3err := uploadFile(c.groupsFilename, c.s3Bucket, c.groupsFilename, c.s3Region)
 	if s3err != nil {
-		log.Println("Theres been an issue in uploading to s3")
-		log.Println(s3err)
-		// os.Exit(1)
+		log.Fatal("Theres been an issue in uploading to s3 %v", s3err)
 	} else {
 		log.Println("Uploaded", c.groupsFilename, "to s3")
-		// deleteFile(c.groupsFilename)
 	}
 	return returnList
 }
@@ -190,11 +183,7 @@ func (c config) processGroupsUsers(groupList []amendedGroupList, userList map[st
 	for _, zebedeegroup := range groupList {
 		for _, member := range zebedeegroup.Members {
 			_, isKeyPresent := userRoles[member]
-			if !isKeyPresent {
-				log.Println("---")
-				log.Println(member, "is not a user???")
-				log.Println("---")
-			} else {
+			if isKeyPresent {
 				userRoles[member] = append(userRoles[member], fmt.Sprintf("%v", zebedeegroup.cognitoGroupName))
 			}
 		}
@@ -228,17 +217,17 @@ func (c config) processGroupsUsers(groupList []amendedGroupList, userList map[st
 	log.Println("Actual row count: - ", len(records)-1)
 	log.Println("=========")
 
-	log.Println("Uploading", c.environment+"/"+c.groupUsersFilename, "to s3")
+	log.Println("Uploading", c.groupUsersFilename, "to s3")
 
-	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.environment+"/"+c.groupUsersFilename, c.s3Region)
+	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.groupUsersFilename, c.s3Region)
 	if s3err != nil {
 		log.Fatal("Theres been an issue in uploading to s3", s3err)
 	} else {
 		log.Println("Uploaded", c.groupUsersFilename, "to s3")
+
+		deleteFile(c.groupsFilename)
 		deleteFile(c.groupUsersFilename)
 		deleteFile(c.validUsersFileName)
-		deleteFile(c.groupsFilename)
-		deleteFile(c.groupsFilename)
 
 	}
 }
@@ -343,7 +332,8 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 
 	f, err := os.Open(fileName)
 	if err != nil {
-		return fmt.Errorf("failed to open file %q, %+v", fileName, err)
+		log.Fatal("failed to open file %q, %+v", fileName, err)
+		return err
 	}
 
 	result, err := uploader.Upload(&s3manager.UploadInput{
@@ -352,7 +342,8 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 		Body:   f,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to upload file, %+v", err)
+		log.Fatal("failed to upload file, %+v", err)
+		return err
 	}
 	log.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
 	return nil
@@ -361,8 +352,7 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
 func deleteFile(fileName string) {
 	err := os.Remove(fileName)
 	if err != nil {
-		log.Printf("failed deleting file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed deleting file: %s", err)
 	}
 }
 
@@ -374,7 +364,7 @@ func main() {
 	logFileName := logFileName + "_" + now + ".log"
 	logFileHandler, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Printf("error opening file: %v", err)
+		log.Fatal("error opening file: %v", err)
 	}
 	log.SetOutput(logFileHandler)
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
