@@ -15,6 +15,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+const (
+	logFileName = "groupslog"
+	dateLayout  = "2006-01-02_15_04_05"
+)
+
 type config struct {
 	environment,
 	groupsFilename,
@@ -47,28 +52,26 @@ func ExtractGroupsData() {
 
 	sess, err := zebCli.OpenSession(c)
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		log.Fatal("zebedee open sessions", err)
 	}
 
 	// get teams from zebedee
 	groupList, err := zebCli.ListTeams(sess)
 	if err != nil {
-		log.Println("Get data from zebedee", err)
-		os.Exit(1)
+		log.Fatal("Get data from zebedee", err)
 	}
 
 	// get valid users from user_extract
 	usersCSV, err := os.Open(conf.validUsersFileName)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	defer usersCSV.Close()
 	userReader := csv.NewReader(usersCSV)
 	userReader.Read()
 	rows, err := userReader.ReadAll()
 	if err != nil {
-		log.Println("Cannot read CSV file:", err)
+		log.Fatal("Cannot read CSV file:", err)
 	}
 	users := map[string]string{}
 	for _, row := range rows {
@@ -129,16 +132,14 @@ func (c config) processGroups(groupList zebedee.TeamsList) []amendedGroupList {
 		}
 		returnList = append(returnList, tmpReturn)
 		if write_err := csvwriter.Write(convertToSlice_Group(tmp)); write_err != nil {
-			log.Printf("failed writing file: %s", err)
-			os.Exit(1)
+			log.Fatal("failed writing file: %s", err)
 		}
 
 	}
 	csvwriter.Flush()
 	err = groupsCSVFile.Close()
 	if err != nil {
-		log.Printf("failed closing file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed closing file: %s", err)
 	}
 
 	log.Println("========= ", c.groupsFilename, "file validiation =============")
@@ -180,13 +181,11 @@ func (c config) processGroups(groupList zebedee.TeamsList) []amendedGroupList {
 func (c config) processGroupsUsers(groupList []amendedGroupList, userList map[string]string, userRoles map[string][]string) {
 	usergroupsCSVFile, err := os.Create(c.groupUsersFilename)
 	if err != nil {
-		log.Printf("failed creating file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed creating file: %s", err)
 	}
 	csvwriter := csv.NewWriter(usergroupsCSVFile)
 	if write_err := csvwriter.Write(convertToSlice_UserGroup(headerUserGroup)); write_err != nil {
-		log.Printf("failed writing file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed writing file: %s", err)
 	}
 	for _, zebedeegroup := range groupList {
 		for _, member := range zebedeegroup.Members {
@@ -213,19 +212,16 @@ func (c config) processGroupsUsers(groupList []amendedGroupList, userList map[st
 
 	f, err := os.Open(c.groupUsersFilename)
 	if err != nil {
-		log.Printf("failed opening file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed opening file: %s", err)
 	}
 	records, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		log.Printf("failed reading file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed reading file: %s", err)
 	}
 
 	log.Println("========= ", c.groupUsersFilename, "file validation =============")
 	if len(records)-1 != len(userList) || csvwriter.Error() != nil {
-		log.Println("There has been an error... ")
-		log.Println("csv Errors ", csvwriter.Error())
+		log.Fatal("csv Errors ", csvwriter.Error())
 	}
 
 	log.Println("Expected row count: - ", len(userList))
@@ -236,13 +232,12 @@ func (c config) processGroupsUsers(groupList []amendedGroupList, userList map[st
 
 	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.environment+"/"+c.groupUsersFilename, c.s3Region)
 	if s3err != nil {
-		log.Println("Theres been an issue in uploading to s3")
-		log.Println(s3err)
-		// os.Exit(1)
+		log.Fatal("Theres been an issue in uploading to s3", s3err)
 	} else {
 		log.Println("Uploaded", c.groupUsersFilename, "to s3")
 		deleteFile(c.groupUsersFilename)
 		deleteFile(c.validUsersFileName)
+		deleteFile(c.groupsFilename)
 		deleteFile(c.groupsFilename)
 
 	}
@@ -287,10 +282,8 @@ func readConfig() *config {
 }
 
 func missingVariables(envValue string, value string) bool {
-	log.Println(envValue, value, len(value))
 	if len(value) < 1 {
-		log.Println("Please set Environment Variables ", envValue)
-		os.Exit(3)
+		log.Fatal("Please set Environment Variables ", envValue)
 	}
 	return true
 }
@@ -375,17 +368,22 @@ func deleteFile(fileName string) {
 
 func main() {
 	start := time.Now()
-	logFile, err := os.OpenFile("./groupslog.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.SetOutput(logFile)
-	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+	conf := readConfig()
+	now := time.Now().Format(dateLayout)
 
+	logFileName := logFileName + "_" + now + ".log"
+	logFileHandler, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("error opening file: %v", err)
+	}
+	log.SetOutput(logFileHandler)
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 	log.Println("log file created")
 
 	ExtractGroupsData()
 
 	elapsed := time.Since(start)
 	log.Printf("Elapse time %s\n", elapsed)
+	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region)
+	deleteFile(logFileName)
 }

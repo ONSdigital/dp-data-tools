@@ -14,6 +14,11 @@ import (
 	"time"
 )
 
+const (
+	logFileName = "Userlog"
+	dateLayout  = "2006-01-02_15_04_05"
+)
+
 type config struct {
 	environment,
 	validUsersFileName,
@@ -240,15 +245,13 @@ func ExtractUserData() {
 
 	sess, err := zebCli.OpenSession(c)
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		log.Fatal("zebedee open sessions", err)
 	}
 
 	userList, err := zebCli.GetUsers(sess)
 	if err != nil {
-		log.Println("Theres been an issue")
-		log.Println(err)
-		os.Exit(1)
+		log.Fatal("zebedee get users", err)
+
 	}
 	validUsersFile := createFile(conf.validUsersFileName)
 	validUsersWriter := csv.NewWriter(validUsersFile)
@@ -337,17 +340,21 @@ func deleteFile(fileName string) {
 }
 func main() {
 	start := time.Now()
-	logFile, err := os.OpenFile("./userslog.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	conf := readConfig()
+	now := time.Now().Format(dateLayout)
+	logFileName := logFileName + "_" + now + ".log"
+	logFileHandler, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("error opening file: %v", err)
 	}
-	log.SetOutput(logFile)
+	log.SetOutput(logFileHandler)
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-
 	log.Println("log file created")
 
 	ExtractUserData()
 	elapsed := time.Since(start)
 	log.Printf("Elapse time %s\n", elapsed)
+	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region)
+	deleteFile(logFileName)
 
 }
