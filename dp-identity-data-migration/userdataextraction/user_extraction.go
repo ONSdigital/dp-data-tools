@@ -177,10 +177,10 @@ func processZebedeeUsers(validUsersWriter *csv.Writer, invalidUsersWriter *csv.W
 			csvLine.familyName = names[0]
 		}
 
-		csvLine.mfaEnabled = "FALSE"
-		csvLine.enabled = "TRUE"
-		csvLine.phoneNumberVerified = "FALSE"
-		csvLine.emailVerified = "TRUE"
+		csvLine.mfaEnabled = "false"
+		csvLine.enabled = "true"
+		csvLine.phoneNumberVerified = "false"
+		csvLine.emailVerified = "true"
 
 		userDetails := convertToSlice(csvLine)
 		if validateEmailId(validEmailDomains, user.Email) {
