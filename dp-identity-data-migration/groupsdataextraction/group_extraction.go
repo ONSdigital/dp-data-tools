@@ -292,7 +292,7 @@ type group struct {
 }
 
 var group_header = group{
-	GroupName:        "group_name",
+	GroupName:        "groupname",
 	UserPoolId:       "user_pool_id",
 	Description:      "description",
 	RoleArn:          "role_arn",
