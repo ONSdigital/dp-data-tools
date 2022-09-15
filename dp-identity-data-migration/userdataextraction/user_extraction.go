@@ -123,8 +123,7 @@ func readConfig() *config {
 
 func missingVariables(envValue string, value string) bool {
 	if len(value) == 0 {
-		log.Println("Please set Environment Variables ", envValue)
-		os.Exit(3)
+		log.Fatal("Please set Environment Variables %v", envValue)
 	}
 	return true
 }
@@ -275,15 +274,11 @@ func ExtractUserData() {
 	csvHeader := convertToSlice(header)
 	err = validUsersWriter.Write(csvHeader)
 	if err != nil {
-		log.Println("Theres been an issue")
-		log.Println(err)
-		os.Exit(1)
+		log.Fatal("Theres been an issue in writing header to file %v", err)
 	}
 	err = invalidUsersWriter.Write(csvHeader)
 	if err != nil {
-		log.Println("Theres been an issue")
-		log.Println(err)
-		os.Exit(1)
+		log.Fatal("Theres been an issue in writing header to file %v", err)
 	}
 
 	validUsersCount, invalidUsersCount := processZebedeeUsers(validUsersWriter, invalidUsersWriter, userList, conf.emailDomains)
@@ -304,33 +299,25 @@ func ExtractUserData() {
 
 	err = validUsersFile.Close()
 	if err != nil {
-		log.Println("Theres been an issue")
-		log.Println(err)
-		os.Exit(1)
+		log.Println("Theres been an issue in closing file %v", err)
 	}
 	err = invalidUsersFile.Close()
 	if err != nil {
-		log.Println("Theres been an issue")
-		log.Println(err)
-		os.Exit(1)
+		log.Println("Theres been an issue in closing file %v", err)
+
 	}
 	log.Println("========= Uploading valid users file to S3 =============")
 	s3err := uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.validUsersFileName, conf.s3Region, conf.awsProfile)
 	if s3err != nil {
-		log.Println("Theres been an issue in uploading to s3")
-		log.Println(s3err)
-		os.Exit(1)
+		log.Fatal("Theres been an issue in uploading to s3 %v", err)
 	}
 
 	s3err = uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.invalidUsersFileName, conf.s3Region, conf.awsProfile)
 	if s3err != nil {
-		log.Println("Theres been an issue in uploading to s3")
-		log.Println(s3err)
-		os.Exit(1)
+		log.Fatal("Theres been an issue in uploading to s3 %v", err)
 	}
 
 	log.Println("========= Uploaded files to S3 =============")
-	//deleteFile(conf.validUsersFileName)
 	deleteFile(conf.invalidUsersFileName)
 
 }
@@ -338,8 +325,7 @@ func ExtractUserData() {
 func createFile(fileName string) *os.File {
 	csvFile, err := os.Create(fileName)
 	if err != nil {
-		log.Printf("failed creating file: %s", err)
-		os.Exit(1)
+		log.Fatal("failed creating file: %v", err)
 	}
 	return csvFile
 }
@@ -347,8 +333,7 @@ func createFile(fileName string) *os.File {
 func deleteFile(fileName string) {
 	err := os.Remove(fileName)
 	if err != nil {
-		log.Printf("failed deleting file: %s", err)
-		os.Exit(1)
+		log.Printf("failed deleting file: %v", err)
 	}
 }
 func main() {

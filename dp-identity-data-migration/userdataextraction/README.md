@@ -40,7 +40,8 @@ two terminal windows are required  one for the tunnel, another to run extracts
     export groupusers_filename=<groupusers_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
     export filename=<users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
     export s3_bucket="ons-dp-develop-cognito-backup-poc"
-    export s3_region=<{eu-west-1 eu-west-3}
+    export s3_region=<{eu-west-1 eu-west-2}
+    export aws_profile=<profile name for environment>
     ```
 
 3. Run the code....
