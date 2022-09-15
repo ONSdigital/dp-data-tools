@@ -20,6 +20,7 @@ const (
 
 type config struct {
 	environment,
+	awsProfile,
 	validUsersFileName,
 	invalidUsersFileName,
 	host,
@@ -87,6 +88,9 @@ func readConfig() *config {
 		case "environment":
 			missingVariables("environment", pair[1])
 			conf.environment = pair[1]
+		case "aws_profile":
+			missingVariables("aws_profile", pair[1])
+			conf.awsProfile = pair[1]
 		case "validusers_filename":
 			missingVariables("validusers_filename", pair[1])
 			conf.validUsersFileName = pair[1]
@@ -209,8 +213,15 @@ func validateEmailId(validEmailDomains []string, emailID string) bool {
 	return false
 }
 
-func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
-	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+func uploadFile(fileName, s3Bucket, s3FilePath, region, awsProfile string) error {
+
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Profile: awsProfile,
+		Config: aws.Config{
+			Region: aws.String(region),
+		},
+		SharedConfigState: session.SharedConfigEnable,
+	}))
 
 	uploader := s3manager.NewUploader(sess)
 
@@ -304,14 +315,14 @@ func ExtractUserData() {
 		os.Exit(1)
 	}
 	log.Println("========= Uploading valid users file to S3 =============")
-	s3err := uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.validUsersFileName, conf.s3Region)
+	s3err := uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.validUsersFileName, conf.s3Region, conf.awsProfile)
 	if s3err != nil {
 		log.Println("Theres been an issue in uploading to s3")
 		log.Println(s3err)
 		os.Exit(1)
 	}
 
-	s3err = uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.invalidUsersFileName, conf.s3Region)
+	s3err = uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.invalidUsersFileName, conf.s3Region, conf.awsProfile)
 	if s3err != nil {
 		log.Println("Theres been an issue in uploading to s3")
 		log.Println(s3err)
@@ -356,7 +367,7 @@ func main() {
 	ExtractUserData()
 	elapsed := time.Since(start)
 	log.Printf("Elapse time %s\n", elapsed)
-	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region)
+	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region, conf.awsProfile)
 	deleteFile(logFileName)
 
 }

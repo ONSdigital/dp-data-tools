@@ -22,6 +22,7 @@ const (
 
 type config struct {
 	environment,
+	awsProfile,
 	groupsFilename,
 	groupUsersFilename,
 	validUsersFileName,
@@ -162,7 +163,7 @@ func (c config) processGroups(groupList zebedee.TeamsList) []amendedGroupList {
 
 	log.Println("Uploading", c.groupsFilename, "to s3")
 
-	s3err := uploadFile(c.groupsFilename, c.s3Bucket, c.groupsFilename, c.s3Region)
+	s3err := uploadFile(c.groupsFilename, c.s3Bucket, c.groupsFilename, c.s3Region, c.awsProfile)
 	if s3err != nil {
 		log.Fatal("Theres been an issue in uploading to s3 %v", s3err)
 	} else {
@@ -219,7 +220,7 @@ func (c config) processGroupsUsers(groupList []amendedGroupList, userList map[st
 
 	log.Println("Uploading", c.groupUsersFilename, "to s3")
 
-	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.groupUsersFilename, c.s3Region)
+	s3err := uploadFile(c.groupUsersFilename, c.s3Bucket, c.groupUsersFilename, c.s3Region, c.awsProfile)
 	if s3err != nil {
 		log.Fatal("Theres been an issue in uploading to s3", s3err)
 	} else {
@@ -240,6 +241,9 @@ func readConfig() *config {
 		case "environment":
 			missingVariables("environment", pair[1])
 			conf.environment = pair[1]
+		case "aws_profile":
+			missingVariables("aws_profile", pair[1])
+			conf.awsProfile = pair[1]
 		case "validusers_filename":
 			missingVariables("validusers_filename", pair[1])
 			conf.validUsersFileName = pair[1]
@@ -326,8 +330,14 @@ func convertToSlice_UserGroup(input userGroupCSV) []string {
 	}
 }
 
-func uploadFile(fileName, s3Bucket, s3FilePath, region string) error {
-	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+func uploadFile(fileName, s3Bucket, s3FilePath, region, awsProfile string) error {
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Profile: awsProfile,
+		Config: aws.Config{
+			Region: aws.String(region),
+		},
+		SharedConfigState: session.SharedConfigEnable,
+	}))
 	uploader := s3manager.NewUploader(sess)
 
 	f, err := os.Open(fileName)
@@ -374,6 +384,6 @@ func main() {
 
 	elapsed := time.Since(start)
 	log.Printf("Elapse time %s\n", elapsed)
-	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region)
+	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region, conf.awsProfile)
 	deleteFile(logFileName)
 }
