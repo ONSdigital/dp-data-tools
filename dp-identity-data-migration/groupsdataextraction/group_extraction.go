@@ -80,21 +80,21 @@ func ExtractGroupsData() {
 	}
 
 	tmpUserGroups := make(map[string][]string)
-	for k := range users {
-		_, isKeyPresent := tmpUserGroups[k]
+	for userEmail, userUUID := range users {
+		_, isKeyPresent := tmpUserGroups[userEmail]
 		if !isKeyPresent {
-			tmpUserGroups[k] = make([]string, 0)
+			tmpUserGroups[userUUID] = make([]string, 0)
 		}
-		permissions, err := zebCli.GetPermissions(sess, k)
+		permissions, err := zebCli.GetPermissions(sess, userEmail)
 		if err != nil {
 			log.Println(err)
 		}
 		if permissions.Admin {
-			tmpUserGroups[k] = append(tmpUserGroups[k], "role-admin")
+			tmpUserGroups[userUUID] = append(tmpUserGroups[userUUID], "role-admin")
 		}
 
 		if permissions.Editor {
-			tmpUserGroups[k] = append(tmpUserGroups[k], "role-publisher")
+			tmpUserGroups[userUUID] = append(tmpUserGroups[userUUID], "role-publisher")
 		}
 	}
 
