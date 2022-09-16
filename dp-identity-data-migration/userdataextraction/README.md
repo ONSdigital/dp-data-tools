@@ -38,7 +38,8 @@ two terminal windows are required  one for the tunnel, another to run extracts
     export zebedee_pword=<zebedee user admin password for environment>
     export groups_filename=<groups_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
     export groupusers_filename=<groupusers_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
-    export filename=<users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export validusers_filename=<valid_users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export invalidusers_filename=<invalid_users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
     export s3_bucket="ons-dp-develop-cognito-backup-poc"
     export s3_region=<{eu-west-1 eu-west-2}
     export aws_profile=<profile name for environment>
