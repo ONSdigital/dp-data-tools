@@ -2,15 +2,16 @@ package main
 
 import (
 	"encoding/csv"
+	"log"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
-	"log"
-	"os"
-	"strings"
-	"time"
 )
 
 const (
@@ -123,7 +124,7 @@ func readConfig() *config {
 
 func missingVariables(envValue string, value string) bool {
 	if len(value) == 0 {
-		log.Fatal("Please set Environment Variables %v", envValue)
+		log.Fatalf("Please set Environment Variable: %s", envValue)
 	}
 	return true
 }
@@ -185,13 +186,13 @@ func processZebedeeUsers(validUsersWriter *csv.Writer, invalidUsersWriter *csv.W
 		userDetails := convertToSlice(csvLine)
 		if validateEmailId(validEmailDomains, user.Email) {
 			if err := validUsersWriter.Write(userDetails); err != nil {
-				log.Println("error writing record to csv:", err)
+				log.Printf("error writing record to csv: %v\n", err)
 			} else {
 				validUsersCount += 1
 			}
 		} else {
 			if err := invalidUsersWriter.Write(userDetails); err != nil {
-				log.Println("error writing record to csv:", err)
+				log.Printf("error writing record to csv: %v\n", err)
 			} else {
 				invalidUsersCount += 1
 			}
@@ -226,7 +227,7 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region, awsProfile string) error
 
 	f, err := os.Open(fileName)
 	if err != nil {
-		log.Fatal("failed to open file %q, %+v", fileName, err)
+		log.Fatalf("failed to open file %s, error is: %v", fileName, err)
 		return err
 	}
 
@@ -236,17 +237,15 @@ func uploadFile(fileName, s3Bucket, s3FilePath, region, awsProfile string) error
 		Body:   f,
 	})
 	if err != nil {
-		log.Fatal("failed to upload file: %+v", err)
+		log.Fatalf("failed to upload file %s, error is: %v", fileName, err)
 		return err
 
 	}
-	log.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
+	log.Printf("file uploaded to %s\n", aws.StringValue(&result.Location))
 	return nil
 }
 
-func ExtractUserData() {
-
-	conf := readConfig()
+func ExtractUserData(conf *config) {
 	httpCli := zebedee.NewHttpClient(time.Second * 5)
 	zebCli := zebedee.NewClient(conf.host, httpCli)
 
@@ -257,12 +256,12 @@ func ExtractUserData() {
 
 	sess, err := zebCli.OpenSession(c)
 	if err != nil {
-		log.Fatal("zebedee open sessions", err)
+		log.Fatalf("zebedee open sessions, error is: %v", err)
 	}
 
 	userList, err := zebCli.GetUsers(sess)
 	if err != nil {
-		log.Fatal("zebedee get users", err)
+		log.Fatalf("zebedee get users, error is: %v", err)
 
 	}
 	validUsersFile := createFile(conf.validUsersFileName)
@@ -274,11 +273,11 @@ func ExtractUserData() {
 	csvHeader := convertToSlice(header)
 	err = validUsersWriter.Write(csvHeader)
 	if err != nil {
-		log.Fatal("Theres been an issue in writing header to file %v", err)
+		log.Fatalf("Theres been an issue in writing header to file %s, error is: %v", conf.validUsersFileName, err)
 	}
 	err = invalidUsersWriter.Write(csvHeader)
 	if err != nil {
-		log.Fatal("Theres been an issue in writing header to file %v", err)
+		log.Fatalf("Theres been an issue in writing header to file %s, error is: %v", conf.invalidUsersFileName, err)
 	}
 
 	validUsersCount, invalidUsersCount := processZebedeeUsers(validUsersWriter, invalidUsersWriter, userList, conf.emailDomains)
@@ -287,9 +286,9 @@ func ExtractUserData() {
 
 	log.Println("========= file validation =============")
 	if validUsersCount+invalidUsersCount != len(userList) || validUsersWriter.Error() != nil || invalidUsersWriter.Error() != nil {
-		log.Println("There has been an error... ")
-		log.Println("valid users writer Errors ", validUsersWriter.Error())
-		log.Println("invalid users writer Errors ", validUsersWriter.Error())
+		log.Printf("There has been an error... \n")
+		log.Printf("valid users writer Errors: %v\n", validUsersWriter.Error())
+		log.Printf("invalid users writer Errors: %v\n", validUsersWriter.Error())
 	}
 
 	log.Println("Expected row count: - ", len(userList))
@@ -299,22 +298,22 @@ func ExtractUserData() {
 
 	err = validUsersFile.Close()
 	if err != nil {
-		log.Println("Theres been an issue in closing file %v", err)
+		log.Printf("Theres been an issue in closing file %s, error is: %v", conf.validUsersFileName, err)
 	}
 	err = invalidUsersFile.Close()
 	if err != nil {
-		log.Println("Theres been an issue in closing file %v", err)
+		log.Printf("Theres been an issue in closing file %s, error is: %v", conf.invalidUsersFileName, err)
 
 	}
 	log.Println("========= Uploading valid users file to S3 =============")
 	s3err := uploadFile(conf.validUsersFileName, conf.s3Bucket, conf.validUsersFileName, conf.s3Region, conf.awsProfile)
 	if s3err != nil {
-		log.Fatal("Theres been an issue in uploading to s3 %v", err)
+		log.Fatalf("Theres been an issue in uploading to s3 %v", err)
 	}
 
 	s3err = uploadFile(conf.invalidUsersFileName, conf.s3Bucket, conf.invalidUsersFileName, conf.s3Region, conf.awsProfile)
 	if s3err != nil {
-		log.Fatal("Theres been an issue in uploading to s3 %v", err)
+		log.Fatalf("Theres been an issue in uploading to s3 %v", err)
 	}
 
 	log.Println("========= Uploaded files to S3 =============")
@@ -325,7 +324,7 @@ func ExtractUserData() {
 func createFile(fileName string) *os.File {
 	csvFile, err := os.Create(fileName)
 	if err != nil {
-		log.Fatal("failed creating file: %v", err)
+		log.Fatalf("failed creating file %s, error is: %v", fileName, err)
 	}
 	return csvFile
 }
@@ -333,7 +332,7 @@ func createFile(fileName string) *os.File {
 func deleteFile(fileName string) {
 	err := os.Remove(fileName)
 	if err != nil {
-		log.Printf("failed deleting file: %v", err)
+		log.Printf("failed deleting file %s, error is: %v", fileName, err)
 	}
 }
 func main() {
@@ -343,16 +342,15 @@ func main() {
 	logFileName := logFileName + "_" + now + ".log"
 	logFileHandler, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Printf("error opening file: %v", err)
+		log.Printf("error opening file: %s, error is: %v", logFileName, err)
 	}
 	log.SetOutput(logFileHandler)
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-	log.Println("log file created")
+	log.Printf("log file created, %s\n", logFileName)
 
-	ExtractUserData()
+	ExtractUserData(conf)
 	elapsed := time.Since(start)
 	log.Printf("Elapse time %s\n", elapsed)
 	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region, conf.awsProfile)
 	deleteFile(logFileName)
-
 }
