@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/csv"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"log"
 	"os"
 	"strings"
@@ -177,6 +179,10 @@ func processZebedeeUsers(validUsersWriter *csv.Writer, invalidUsersWriter *csv.W
 			csvLine.givenName = ""
 			csvLine.familyName = names[0]
 		}
+
+		// Convert Names to Title Case
+		csvLine.givenName = cases.Title(language.BritishEnglish).String(csvLine.givenName)
+		csvLine.familyName = cases.Title(language.BritishEnglish).String(csvLine.familyName)
 
 		csvLine.mfaEnabled = "false"
 		csvLine.enabled = "true"

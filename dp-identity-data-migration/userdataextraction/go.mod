@@ -6,6 +6,7 @@ require (
 	github.com/ONSdigital/dp-zebedee-sdk-go v0.10.0
 	github.com/aws/aws-sdk-go v1.44.30
 	github.com/google/uuid v1.3.0
+	golang.org/x/text v0.3.7
 )
 
 require (
