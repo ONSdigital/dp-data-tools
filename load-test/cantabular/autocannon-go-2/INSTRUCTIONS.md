@@ -72,9 +72,13 @@ The load test is observed by configuring the Cantabular Publishing Server ASG in
 
 ## Running load test
 
+Ensure you have selected the staging environment for AWS.
+
 The load test is then run by simply doing: `make`
 
-This will build the autocannon.go app to run on linux, load it into  1 or more publishing boxes (as determined by `host_numbers` list in the Makefile) and cause each of these apps to start running some minutes later as determined by lines like this in the Makefile:
+Shortly after the `make` has finished, the load tests will start running on the publishing boxes and apply load to the Cantabular publishing cluster in staging.
+
+The 'make' will build the autocannon.go app to run on linux, load it into  1 or more publishing boxes (as determined by `host_numbers` list in the Makefile) and cause each of these apps to start running some minutes later as determined by lines like this in the Makefile:
 
 ```makefile
 TZ=UTC; start_time=$(shell TZ=UTC date -v +3M '+%H:%M'); \
@@ -83,6 +87,8 @@ TZ=UTC; start_time=$(shell TZ=UTC date -v +3M '+%H:%M'); \
 (where the `+3M` is three minutes, which is OK for 4 instances of autocannon.go being deployed ... This `+3M` needs changing to `+4M` for six instances and needs to be `+5M` for 8 instances)
 
 The time delay for execution gives the makefile enough time to sequentially issue the commands to each publishing box, and then the apps all run at the same time to apply load.
+
+Observe the effect of the load test with `htop` on the Cantabular server boxes. This will allow you to see when the load testin is happening and when it has finished.
 
 ## Adjusting amount of load
 
