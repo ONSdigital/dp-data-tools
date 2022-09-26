@@ -2,7 +2,7 @@
 
 The files in this folder `autocannon-go-2` have been derived from:
 
-https://github.com/GlenTiki/autocannon-go
+<https://github.com/GlenTiki/autocannon-go>
 
 NOTE: the original files build and run, but doing `go mod tidy` throws up an issue ... which persists in the derived code.
 
@@ -10,9 +10,11 @@ NOTE: the original files build and run, but doing `go mod tidy` throws up an iss
 
 The derived code is tunned to make sufficient requests to the Cantabular load balancer endpoint for enough time to see close to 100% CPU usage that will cause the ASG to add more servers to its ASG.
 
-The new code cyles through a list of codebokk endpoints to get the Cantabular servers to load all of the data from the databases into memory to achieve maximum utilisation / performance from the Cantabular servers as advised by Sensible code.
+The new code cyles through a list of codebook endpoints to get the Cantabular servers to load all of the data from the databases into memory to achieve maximum utilisation / performance from the Cantabular servers as advised by Sensible code.
 
 ## Pre-requsites
+
+First INFORM your team and anyone else affected by these load tests that they will be taking place !
 
 The Cantabular servers will need to have the ansible code loading up the following list of files (in file ansible/inventories/staging/group_vars/all):
 
@@ -34,23 +36,29 @@ With the above databases loaded:
 
 log on to Staging publishing 3:
 
+```shell
 dp ssh staging publishing 3
+```
 
 add command `jq`
 
 run commands to get info on what databases the cantabular server in publishing has loaded:
 
+```shell
 curl http://cantabular-server-publishing.internal.staging:14000/v10/datasets | jq .
 
 curl http://cantabular-server-publishing.internal.staging:14000/v10/datasets | jq . | egrep name | grep -vwE "COUNT"
+```
 
 from the first one above, in what it outputs we pick the large and 'real' databases and get a list of each's codebook with:
 
+```shell
 curl 'http://cantabular-server-publishing.internal.staging:14000/v10/codebook/People-Households?cats=false' | jq .
 
 curl 'http://cantabular-server-publishing.internal.staging:14000/v10/codebook/Usual-Residents?cats=false' | jq .
 
 curl 'http://cantabular-server-publishing.internal.staging:14000/v10/codebook/Household-Ref-Persons?cats=false' | jq .
+```
 
 The output from the above is then built into the array `uriList` in the function `runClients()` in the structure you see in the code.
 
@@ -109,6 +117,32 @@ Every time you make any adjustment, re-run the load test and observe (and write 
 Tuning load test is not a straightforward thing to do and requires experimentation.
 
 It becomes tricky as you apply sufficient load for the ASG to scale in 1 or more extra servers.
+
+The duration of the applied load test will probably need increasing to many minutes (to be determined through experimentation) to observe the ASG scale in more servers.
+
+After any load test has run you can log into any of the publishing boxes and examine the timestamped log file in the tmp directory.
+
+If you have applied load with `make` and you wish to apply the same load test again, you can use the following which is quicker:
+
+```shell
+make launch
+```
+
+### NOTE
+
+Once a load sets has run for the specified `duration`, the Cantabular servers will (should) continue to show load  in `htop` for another 60 seconds or so (depending on what timeout is configured for the Cantabular servers) before the requests issued by the load tests are either answered or time out in the Cantabular server.
+
+## Makefile notes
+
+Run `make` to execute load tests.
+This cleans out the app in remote server(s) builds any new version of app, loads app onto remote server(s) and causes the apps to run at a set amount of time later to synchronize the application of load.
+
+After you are finished with your tests, run:
+
+```shell
+make clean
+make clean-tmp
+```
 
 ## Summary
 
