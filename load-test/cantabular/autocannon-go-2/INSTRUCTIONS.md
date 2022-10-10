@@ -2,7 +2,7 @@
 
 The files in this folder `autocannon-go-2` have been derived from:
 
-<https://github.com/GlenTiki/autocannon-go>
+`https://github.com/GlenTiki/autocannon-go`
 
 NOTE: the original files build and run, but doing `go mod tidy` throws up an issue ... which persists in the derived code.
 
@@ -40,7 +40,11 @@ log on to Staging publishing 3:
 dp ssh staging publishing 3
 ```
 
-add command `jq`
+add command `jq`, with:
+
+```shell
+sudo apt install jq
+```
 
 run commands to get info on what databases the cantabular server in publishing has loaded:
 
