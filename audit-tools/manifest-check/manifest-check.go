@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"sigs.k8s.io/yaml"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -24,7 +24,11 @@ type NomadManifest struct {
 	RepoURI        string `yaml:"repo_uri"`
 	Type           string `yaml:"type"`
 	NeedsPrivilege bool   `yaml:"needs_privilege"`
-	Nomad          struct {
+	StaticBuckets  struct {
+		Sandbox string `yaml:"sandbox"`
+		Prod    string `yaml:"prod"`
+	} `yaml:"static_buckets"`
+	Nomad struct {
 		Groups []struct {
 			Class    string `yaml:"class"`
 			Profiles struct {
