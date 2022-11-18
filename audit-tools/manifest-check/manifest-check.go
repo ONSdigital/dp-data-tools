@@ -1,5 +1,10 @@
 package main
 
+// This utility looks for and reports specific differences between Staging and Prod manifests.
+// The differences it reports are for: CPU, Memory and Count (number of instances).
+// The need for this App arose during TISS Load testing when we wanted Staging and Prod to
+// have equivalent resources and manually checking over 100 manifest files needed automating.
+
 import (
 	"fmt"
 	"log"
@@ -16,8 +21,8 @@ const (
 // NomadManifest was created using:
 // https://zhwt.github.io/yaml-to-go/
 //
-// whereby I copied in the manifest file for dp-cantabular-xlsx-csv-exporter
-// and then also copied in another that identified 'SecretsStyle',
+// whereby I copied in the manifest file for dp-cantabular-csv-exporter
+// and then also copied in another that identified 'SecretsStyle', and another for 'StaticBuckets'
 // that was then merged in with the below struct.
 type NomadManifest struct {
 	Name           string `yaml:"name"`
@@ -33,22 +38,25 @@ type NomadManifest struct {
 			Class    string `yaml:"class"`
 			Profiles struct {
 				Sandbox struct {
-					Count     int `yaml:"count"`
-					Resources struct {
+					Count       int `yaml:"count"`
+					MaxParallel int `yaml:"max_parallel"`
+					Resources   struct {
 						CPU    int `yaml:"cpu"`
 						Memory int `yaml:"memory"`
 					} `yaml:"resources"`
 				} `yaml:"sandbox"`
 				Staging struct {
-					Count     int `yaml:"count"`
-					Resources struct {
+					Count       int `yaml:"count"`
+					MaxParallel int `yaml:"max_parallel"`
+					Resources   struct {
 						CPU    int `yaml:"cpu"`
 						Memory int `yaml:"memory"`
 					} `yaml:"resources"`
 				} `yaml:"staging"`
 				Production struct {
-					Count     int `yaml:"count"`
-					Resources struct {
+					Count       int `yaml:"count"`
+					MaxParallel int `yaml:"max_parallel"`
+					Resources   struct {
 						CPU    int `yaml:"cpu"`
 						Memory int `yaml:"memory"`
 					} `yaml:"resources"`
@@ -67,12 +75,11 @@ type NomadManifest struct {
 }
 
 func main() {
+	// get file handle for the manifests directory
 	file, err := os.Open(manifestPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	defer file.Close()
 
 	defer func() {
 		if err := file.Close(); err != nil {
@@ -80,13 +87,14 @@ func main() {
 		}
 	}()
 
+	// read all files in manifests directory
 	list, err := file.Readdir(-1)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// create list of only the '.yml' manifest files
 	var manifestFiles []string
-
 	for _, f := range list {
 		fName := f.Name()
 		if strings.Contains(fName, ".yml") {
@@ -94,8 +102,9 @@ func main() {
 		}
 	}
 
-	found := false
+	differencesFound := false
 
+	// check each manifest file
 	for _, ymlName := range manifestFiles {
 		yFile, err := os.ReadFile(ymlName)
 		if err != nil {
@@ -127,19 +136,20 @@ func main() {
 				if group.Profiles.Staging.Count != group.Profiles.Production.Count ||
 					group.Profiles.Staging.Resources.CPU != group.Profiles.Production.Resources.CPU ||
 					group.Profiles.Staging.Resources.Memory != group.Profiles.Production.Resources.Memory {
-					found = true
+
+					differencesFound = true
 					fmt.Printf("File: %s\n", ymlName)
 					fmt.Println("DIFF: ", group.Class)
 					if group.Profiles.Staging.Count != group.Profiles.Production.Count {
-						fmt.Printf("  Staging Count = %d, Production Count = %d\n", group.Profiles.Staging.Count, group.Profiles.Production.Count)
+						fmt.Printf("  Staging Count  = %4d,  Production Count  = %4d\n", group.Profiles.Staging.Count, group.Profiles.Production.Count)
 					}
 
 					if group.Profiles.Staging.Resources.CPU != group.Profiles.Production.Resources.CPU {
-						fmt.Printf("  Staging CPU = %d, Production CPU = %d\n", group.Profiles.Staging.Resources.CPU, group.Profiles.Production.Resources.CPU)
+						fmt.Printf("  Staging CPU    = %4d,  Production CPU    = %4d\n", group.Profiles.Staging.Resources.CPU, group.Profiles.Production.Resources.CPU)
 					}
 
 					if group.Profiles.Staging.Resources.Memory != group.Profiles.Production.Resources.Memory {
-						fmt.Printf("  Staging Memory = %d, Production Memory = %d\n", group.Profiles.Staging.Resources.Memory, group.Profiles.Production.Resources.Memory)
+						fmt.Printf("  Staging Memory = %4d,  Production Memory = %4d\n", group.Profiles.Staging.Resources.Memory, group.Profiles.Production.Resources.Memory)
 					}
 				}
 			}
@@ -156,7 +166,7 @@ func main() {
 		}
 	}
 
-	if !found {
+	if !differencesFound {
 		fmt.Printf("No differences found between Staging and Production Manifest allocations\n")
 	}
 }
