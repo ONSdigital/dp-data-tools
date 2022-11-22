@@ -27,6 +27,12 @@ var stagingFiles = [...]string{"staging-amis.json", "sandbox-amis.json", "prod-a
 // whereby I copied in the output of running (against Staging):
 // aws ec2 describe-images --owner self --output json | jq . >staging-amis.json
 // and then modifying the 'CreationDate' to be a string
+//
+// and then i used: https://json2struct.mervine.net/
+// with about 100,000 lines of the output from:
+// aws ec2 describe-images --output json | jq . >st-amis.json
+// and then merged in additional struct elements.
+
 type AmiImages struct {
 	Images []struct {
 		Architecture        string `json:"Architecture"`
@@ -43,19 +49,32 @@ type AmiImages struct {
 			DeviceName string `json:"DeviceName"`
 			Ebs        struct {
 				DeleteOnTermination bool   `json:"DeleteOnTermination"`
+				Iops                int64  `json:"Iops"`
 				SnapshotID          string `json:"SnapshotId"`
-				VolumeSize          int    `json:"VolumeSize"`
+				VolumeSize          int64  `json:"VolumeSize"`
+				Throughput          int64  `json:"Throughput"`
 				VolumeType          string `json:"VolumeType"`
 				Encrypted           bool   `json:"Encrypted"`
 			} `json:"Ebs,omitempty"`
 			VirtualName string `json:"VirtualName,omitempty"`
 		} `json:"BlockDeviceMappings"`
+		BootMode        string `json:"BootMode"`
+		DeprecationTime string `json:"DeprecationTime"`
+		Description     string `json:"Description"`
 		EnaSupport      bool   `json:"EnaSupport"`
 		Hypervisor      string `json:"Hypervisor"`
+		ImageOwnerAlias string `json:"ImageOwnerAlias"`
+		KernelID        string `json:"KernelId"`
 		Name            string `json:"Name"`
+		Platform        string `json:"Platform"`
+		ProductCodes    []struct {
+			ProductCodeID   string `json:"ProductCodeId"`
+			ProductCodeType string `json:"ProductCodeType"`
+		} `json:"ProductCodes"`
 		RootDeviceName  string `json:"RootDeviceName"`
 		RootDeviceType  string `json:"RootDeviceType"`
 		SriovNetSupport string `json:"SriovNetSupport"`
+		TpmSupport      string `json:"TpmSupport"`
 		Tags            []struct {
 			Key   string `json:"Key"`
 			Value string `json:"Value"`
@@ -202,6 +221,7 @@ func gitLog(repoName string) {
 
 	// Gets the HEAD history from HEAD, just like this command:
 	Info("git log")
+	Info(directory)
 
 	// ... retrieves the branch pointed by HEAD
 	ref, err := r.Head()
