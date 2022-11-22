@@ -18,7 +18,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-// !!! add other environment strings
 var stagingFiles = [...]string{"staging-amis.json", "sandbox-amis.json", "prod-amis.json"}
 
 // AmiImages was created using:
@@ -252,11 +251,6 @@ func gitLog(repoName string) {
 			fmt.Printf("%v\n", hash)
 		}
 	}
-
-	// !!! look thru:
-	// ~/go/pkg/mod/github.com/go-git
-	// for code to try and list files and their paths in a commit
-	// possibly code that uses: NewTreeWalker() ... look at test code.
 }
 
 // CheckIfError should be used to naively panics if an error is not nil.
@@ -273,3 +267,46 @@ func CheckIfError(err error) {
 func Info(format string, args ...interface{}) {
 	fmt.Printf("\x1b[34;1m%s\x1b[0m\n", fmt.Sprintf(format, args...))
 }
+
+// !!! look thru:
+// ~/go/pkg/mod/github.com/go-git
+// for code to try and list files and their paths in a commit
+// possibly code that uses: NewTreeWalker() ... look at test code.
+
+// !!! go git stuff to read over:
+
+/*
+
+https://ish-ar.io/tutorial-go-git/
+
+https://www.youtube.com/watch?v=tg2yN6ax-xs
+
+https://medium.com/@clm160/tag-example-with-go-git-library-4377a84bbf17
+
+https://pkg.go.dev/github.com/go-git/go-git/v5
+
+https://github.com/go-git/go-git
+
+https://chromium.googlesource.com/external/github.com/src-d/go-git/+/8b0c2116cea2bbcc8d0075e762b887200a1898e1/example_test.go
+
+Also pull the code for 'gitea' and see how that uses go-git lib
+
+
+also pulumi:
+
+how does this use go-git:
+
+https://github.com/pulumi/pulumi/tree/master/pkg
+
+and look at these links:
+
+https://github.com/search?q=org%3Apulumi+go-git&type=Code
+
+
+this code looks useful:
+
+https://github.com/pulumi/pulumi/blob/4478bc0f695b17ec68e8d8e92a3202a038999741/sdk/go/auto/git_test.go
+
+
+
+*/
