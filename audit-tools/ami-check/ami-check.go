@@ -84,12 +84,12 @@ type AmiImages struct {
 
 type AmiNameAndData struct {
 	Name          string
-	SourceAMI     string
+	ImageId       string
 	CreationDate  string
 	ConvertedDate time.Time
 }
 
-var AllSourceAMIs []string
+var AllImageIds []string
 
 func main() {
 	// check each manifest file
@@ -111,37 +111,16 @@ func main() {
 
 		for _, image := range amiInfo.Images {
 			var imageFile AmiNameAndData
-			if len(image.Tags) == 2 {
-				if image.Tags[0].Key == "Name" {
-					imageFile.Name = image.Tags[0].Value
-				} else if image.Tags[1].Key == "Name" {
-					imageFile.Name = image.Tags[1].Value
-				} else {
-					fmt.Printf("Failed to find 'Name' field in Tags field in file: %s\n", jName)
-					os.Exit(102)
-				}
-				if image.Tags[0].Key == "SourceAMI" {
-					imageFile.SourceAMI = image.Tags[0].Value
-				} else if image.Tags[1].Key == "SourceAMI" {
-					imageFile.SourceAMI = image.Tags[1].Value
-				} else {
-					fmt.Printf("Failed to find 'SourceAMI' field in Tags field in file: %s\n", jName)
-					os.Exit(103)
-				}
-				imageFile.CreationDate = image.CreationDate
-
-				f, ferr := time.Parse(time.RFC3339, imageFile.CreationDate) // time format with nanoseconds
-				if ferr != nil {
-					fmt.Printf("error in CreationDate: %v\n", ferr)
-				} else {
-					imageFile.ConvertedDate = f
-					// fmt.Printf("time.Time is %v, CreationDate: %s\n", f, imageFile.CreationDate)
-				}
+			imageFile.ImageId = image.ImageID
+			imageFile.Name = image.Name
+			imageFile.CreationDate = image.CreationDate
+			f, ferr := time.Parse(time.RFC3339, imageFile.CreationDate) // time format with nanoseconds
+			if ferr != nil {
+				fmt.Printf("error in CreationDate: %v\n", ferr)
 			} else {
-				fmt.Printf("Incorrect length of Tags field in file: %s\n", jName)
-				os.Exit(104)
+				imageFile.ConvertedDate = f
 			}
-			AllSourceAMIs = append(AllSourceAMIs, imageFile.SourceAMI)
+			AllImageIds = append(AllImageIds, imageFile.ImageId)
 			imageFiles = append(imageFiles, imageFile)
 		}
 
@@ -157,7 +136,7 @@ func main() {
 		twentyFourMonthsAgo := time.Now().AddDate(0, -24, 0)
 
 		fmt.Printf("Sorted Images: %s\n", jName)
-		fmt.Printf("%-50s, %-25s, %s\n", "Name", "SourceAMI", "CreationDate")
+		fmt.Printf("%-50s, %-25s, %s\n", "Name", "ImageId", "CreationDate")
 		for _, image := range imageFiles {
 			if !printedTwentyFourMonths && (image.ConvertedDate).After(twentyFourMonthsAgo) {
 				printedTwentyFourMonths = true
@@ -171,20 +150,20 @@ func main() {
 				printedSixMonths = true
 				fmt.Printf("Less than 6 months old:\n")
 			}
-			fmt.Printf("%50s, %25s, %s\n", image.Name, image.SourceAMI, image.CreationDate)
+			fmt.Printf("%50s, %25s, %s\n", image.Name, image.ImageId, image.CreationDate)
 		}
 		fmt.Println()
 	}
 
-	AllSourceAMIs = removeDuplicateStr(AllSourceAMIs)
+	AllImageIds = removeDuplicateStr(AllImageIds)
 
-	sort.Strings(AllSourceAMIs)
-	fmt.Printf("ALL AMI's (with duplicates removed):\n")
-	for _, ami := range AllSourceAMIs {
+	sort.Strings(AllImageIds)
+	fmt.Printf("ALL %d AMI's (with duplicates removed):\n", len(AllImageIds))
+	for _, ami := range AllImageIds {
 		fmt.Printf("%s\n", ami)
 	}
 
-	gitLog("dp-setup")
+	//gitLog("dp-setup")
 }
 
 func removeDuplicateStr(strSlice []string) []string {
