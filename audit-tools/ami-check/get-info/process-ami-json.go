@@ -1,4 +1,4 @@
-/*package main
+package main
 
 // This utility reads the given file that contains a list of AWS AMI Image info
 // (that is created by bash script) and produces a report on the images grouped by age
@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var stagingFiles = [...]string{"../tmp/staging-amis.json", "../tmp/sandbox-amis.json", "../tmp/prod-amis.json"}
+var environmentFiles = [...]string{"../tmp/staging-amis.json", "../tmp/sandbox-amis.json", "../tmp/prod-amis.json"}
 
 // AmiImages was created using:
 // https://mholt.github.io/json-to-go/
@@ -86,7 +86,7 @@ type AmiNameAndData struct {
 	ConvertedDate time.Time
 }
 
-var AllImageIds []string
+var AllImageFiles []AmiNameAndData
 
 const (
 	tmpDir     = "../tmp"
@@ -99,7 +99,7 @@ func main() {
 	defer resultsFile.Close()
 
 	// check each manifest file
-	for _, jName := range stagingFiles {
+	for _, jName := range environmentFiles {
 		jFile, err := os.ReadFile(jName)
 		if err != nil {
 			fmt.Printf("Failed reading %s, with error: %v\n", jName, err)
@@ -113,7 +113,7 @@ func main() {
 			os.Exit(101)
 		}
 
-		var imageFiles []AmiNameAndData
+		var environmentImageFiles []AmiNameAndData
 
 		for _, image := range amiInfo.Images {
 			var imageFile AmiNameAndData
@@ -126,11 +126,14 @@ func main() {
 			} else {
 				imageFile.ConvertedDate = f
 			}
-			AllImageIds = append(AllImageIds, imageFile.ImageId)
-			imageFiles = append(imageFiles, imageFile)
+			AllImageFiles = append(AllImageFiles, imageFile)
+			environmentImageFiles = append(environmentImageFiles, imageFile)
 		}
 
-		sort.Slice(imageFiles, func(i, j int) bool { return imageFiles[i].ConvertedDate.Before(imageFiles[j].ConvertedDate) })
+		// sort by putting oldest first
+		sort.Slice(environmentImageFiles, func(i, j int) bool {
+			return environmentImageFiles[i].ConvertedDate.Before(environmentImageFiles[j].ConvertedDate)
+		})
 
 		var printedSixMonths bool
 		sixMonthsAgo := time.Now().AddDate(0, -6, 0)
@@ -143,7 +146,7 @@ func main() {
 
 		displayAndSave(resultsFile, fmt.Sprintf("Sorted Images: %s\n", jName))
 		displayAndSave(resultsFile, fmt.Sprintf("%-50s, %-25s, %s\n", "Name", "ImageId", "CreationDate"))
-		for _, image := range imageFiles {
+		for _, image := range environmentImageFiles {
 			if !printedTwentyFourMonths && (image.ConvertedDate).After(twentyFourMonthsAgo) {
 				printedTwentyFourMonths = true
 				displayAndSave(resultsFile, "Less than 24 months old:\n")
@@ -161,27 +164,30 @@ func main() {
 		displayAndSave(resultsFile, "\n")
 	}
 
-	AllImageIds = removeDuplicateStr(AllImageIds)
-	sort.Strings(AllImageIds)
+	AllImageFiles = removeDuplicateImageId(AllImageFiles)
+	// sort by putting oldest last
+	sort.Slice(AllImageFiles, func(i, j int) bool {
+		return AllImageFiles[j].ConvertedDate.Before(AllImageFiles[i].ConvertedDate)
+	})
 
 	idsFile, err := os.Create(resultsDir + "/all-ami-ids.txt")
 	check(err)
 	defer idsFile.Close()
 
 	// We dont save the following title to file so that the file only contains a list of all ami id's
-	fmt.Printf("ALL %d AMI's (with duplicates removed):\n", len(AllImageIds))
-	for _, ami := range AllImageIds {
-		displayAndSave(idsFile, fmt.Sprintf("%s\n", ami))
-		//fmt.Printf("%s\n", ami)
+	fmt.Printf("ALL %d AMI's (with duplicates removed):\n", len(AllImageFiles))
+	// Save list with all into, so that scan-repo can utilise creation dates to determine how far back in time to process other repo's.
+	for _, imageFile := range AllImageFiles {
+		displayAndSave(idsFile, fmt.Sprintf("%s, %s, %s\n", imageFile.ImageId, imageFile.CreationDate, imageFile.Name))
 	}
 }
 
-func removeDuplicateStr(strSlice []string) []string {
+func removeDuplicateImageId(itemSlice []AmiNameAndData) []AmiNameAndData {
 	allKeys := make(map[string]bool)
-	list := []string{}
-	for _, item := range strSlice {
-		if _, value := allKeys[item]; !value {
-			allKeys[item] = true
+	list := []AmiNameAndData{}
+	for _, item := range itemSlice {
+		if _, value := allKeys[item.ImageId]; !value {
+			allKeys[item.ImageId] = true
 			list = append(list, item)
 		}
 	}
@@ -199,4 +205,3 @@ func displayAndSave(resultsFile *os.File, line string) {
 	_, err := fmt.Fprint(resultsFile, line)
 	check(err)
 }
-*/
