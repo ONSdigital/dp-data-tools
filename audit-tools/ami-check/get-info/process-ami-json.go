@@ -1,4 +1,4 @@
-package main
+/*package main
 
 // This utility reads the given file that contains a list of AWS AMI Image info
 // (that is created by bash script) and produces a report on the images grouped by age
@@ -13,12 +13,9 @@ import (
 	"os"
 	"sort"
 	"time"
-
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-var stagingFiles = [...]string{"staging-amis.json", "sandbox-amis.json", "prod-amis.json"}
+var stagingFiles = [...]string{"../tmp/staging-amis.json", "../tmp/sandbox-amis.json", "../tmp/prod-amis.json"}
 
 // AmiImages was created using:
 // https://mholt.github.io/json-to-go/
@@ -91,7 +88,16 @@ type AmiNameAndData struct {
 
 var AllImageIds []string
 
+const (
+	tmpDir     = "../tmp"
+	resultsDir = "../results"
+)
+
 func main() {
+	resultsFile, err := os.Create(resultsDir + "/sorted-amis.txt")
+	check(err)
+	defer resultsFile.Close()
+
 	// check each manifest file
 	for _, jName := range stagingFiles {
 		jFile, err := os.ReadFile(jName)
@@ -135,35 +141,39 @@ func main() {
 		var printedTwentyFourMonths bool
 		twentyFourMonthsAgo := time.Now().AddDate(0, -24, 0)
 
-		fmt.Printf("Sorted Images: %s\n", jName)
-		fmt.Printf("%-50s, %-25s, %s\n", "Name", "ImageId", "CreationDate")
+		displayAndSave(resultsFile, fmt.Sprintf("Sorted Images: %s\n", jName))
+		displayAndSave(resultsFile, fmt.Sprintf("%-50s, %-25s, %s\n", "Name", "ImageId", "CreationDate"))
 		for _, image := range imageFiles {
 			if !printedTwentyFourMonths && (image.ConvertedDate).After(twentyFourMonthsAgo) {
 				printedTwentyFourMonths = true
-				fmt.Printf("Less than 24 months old:\n")
+				displayAndSave(resultsFile, "Less than 24 months old:\n")
 			}
 			if !printedTwelveMonths && (image.ConvertedDate).After(twelveMonthsAgo) {
 				printedTwelveMonths = true
-				fmt.Printf("Less than 12 months old:\n")
+				displayAndSave(resultsFile, "Less than 12 months old:\n")
 			}
 			if !printedSixMonths && (image.ConvertedDate).After(sixMonthsAgo) {
 				printedSixMonths = true
-				fmt.Printf("Less than 6 months old:\n")
+				displayAndSave(resultsFile, "Less than 6 months old:\n")
 			}
-			fmt.Printf("%50s, %25s, %s\n", image.Name, image.ImageId, image.CreationDate)
+			displayAndSave(resultsFile, fmt.Sprintf("%50s, %25s, %s\n", image.Name, image.ImageId, image.CreationDate))
 		}
-		fmt.Println()
+		displayAndSave(resultsFile, "\n")
 	}
 
 	AllImageIds = removeDuplicateStr(AllImageIds)
-
 	sort.Strings(AllImageIds)
+
+	idsFile, err := os.Create(resultsDir + "/all-ami-ids.txt")
+	check(err)
+	defer idsFile.Close()
+
+	// We dont save the following title to file so that the file only contains a list of all ami id's
 	fmt.Printf("ALL %d AMI's (with duplicates removed):\n", len(AllImageIds))
 	for _, ami := range AllImageIds {
-		fmt.Printf("%s\n", ami)
+		displayAndSave(idsFile, fmt.Sprintf("%s\n", ami))
+		//fmt.Printf("%s\n", ami)
 	}
-
-	//gitLog("dp-setup")
 }
 
 func removeDuplicateStr(strSlice []string) []string {
@@ -178,114 +188,15 @@ func removeDuplicateStr(strSlice []string) []string {
 	return list
 }
 
-func gitLog(repoName string) {
-	// Clones the given repository, creating the remote, the local branches
-	// and fetching the objects, everything in memory:
-	/*	fullRepoURL := "https://github.com/ONSdigital/" + repoName
-		Info("git clone:")
-		Info(fullRepoURL)
-		r, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-			URL: fullRepoURL,
-		})
-		CheckIfError(err)*/
-
-	directory := "../../../" + repoName
-	// Opens an already existing repository.
-	r, err := git.PlainOpen(directory)
-	CheckIfError(err)
-
-	//	w, err := r.Worktree()
-	//	CheckIfError(err)
-
-	// Gets the HEAD history from HEAD, just like this command:
-	Info("git log")
-	Info(directory)
-
-	// ... retrieves the branch pointed by HEAD
-	ref, err := r.Head()
-	CheckIfError(err)
-
-	// ... retrieves the commit history
-	since := time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)   //!!! fix to 2010
-	until := time.Date(2022, 11, 23, 0, 0, 0, 0, time.UTC) //!!! fix to current data and time
-	cIter, err := r.Log(&git.LogOptions{From: ref.Hash(), Since: &since, Until: &until})
-	CheckIfError(err)
-
-	var total int
-	var hashes []object.Hash
-	var hashesString []string
-	// ... just iterates over the commits, printing it
-	err = cIter.ForEach(func(c *object.Commit) error {
-		fmt.Println(c)
-		total++
-		hashes = append(hashes, object.Hash(c.Hash))
-		hashesString = append(hashesString, c.Hash.String())
-		return nil
-	})
-	CheckIfError(err)
-	fmt.Printf("Number of logs found in %s, is: %d\n", repoName, total)
-
-	for i, hash := range hashesString {
-		if i > 7089 {
-			fmt.Printf("%v\n", hash)
-		}
+func check(err error) {
+	if err != nil {
+		panic(err)
 	}
 }
 
-// CheckIfError should be used to naively panics if an error is not nil.
-func CheckIfError(err error) {
-	if err == nil {
-		return
-	}
-
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
-	os.Exit(1)
+func displayAndSave(resultsFile *os.File, line string) {
+	fmt.Printf("%s", line)
+	_, err := fmt.Fprint(resultsFile, line)
+	check(err)
 }
-
-// Info should be used to describe the example commands that are about to run.
-func Info(format string, args ...interface{}) {
-	fmt.Printf("\x1b[34;1m%s\x1b[0m\n", fmt.Sprintf(format, args...))
-}
-
-// !!! look thru:
-// ~/go/pkg/mod/github.com/go-git
-// for code to try and list files and their paths in a commit
-// possibly code that uses: NewTreeWalker() ... look at test code.
-
-// !!! go git stuff to read over:
-
-/*
-
-https://ish-ar.io/tutorial-go-git/
-
-https://www.youtube.com/watch?v=tg2yN6ax-xs
-
-https://medium.com/@clm160/tag-example-with-go-git-library-4377a84bbf17
-
-https://pkg.go.dev/github.com/go-git/go-git/v5
-
-https://github.com/go-git/go-git
-
-https://chromium.googlesource.com/external/github.com/src-d/go-git/+/8b0c2116cea2bbcc8d0075e762b887200a1898e1/example_test.go
-
-Also pull the code for 'gitea' and see how that uses go-git lib
-
-
-also pulumi:
-
-how does this use go-git:
-
-https://github.com/pulumi/pulumi/tree/master/pkg
-
-and look at these links:
-
-https://github.com/search?q=org%3Apulumi+go-git&type=Code
-
-
-this code looks useful:
-
-https://github.com/pulumi/pulumi/blob/4478bc0f695b17ec68e8d8e92a3202a038999741/sdk/go/auto/git_test.go
-
-
-
 */
