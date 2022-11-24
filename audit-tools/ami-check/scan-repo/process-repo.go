@@ -30,17 +30,43 @@ import (
 	"gopkg.in/src-d/go-billy.v4/util"
 )
 
-var AllImageIds []string
-
 const (
 	tmpDir     = "../tmp"
 	resultsDir = "../results"
 )
 
+// amiStatus the state of an AMI
+type amiStatus int
+
+const (
+	AmiUnknown      amiStatus = iota // 0
+	AmiInUse                         // 1
+	AmiNeverUsed                     // 2
+	AmiNoLongerUsed                  // 3
+)
+
+type AmiNameAndData struct {
+	Name          string
+	ImageId       string
+	CreationDate  string
+	ConvertedDate time.Time
+	Status        amiStatus
+}
+
+var AllImageInfo []AmiNameAndData
+
 func main() {
 	// !!! read in the ami id's
 
+	//!!! fix logging of errors.
+
+	// !!! pass into gitlog, the oldest creation date to limit how far back it looks to this date minus 1 month (just to be sure)
 	gitLog("dp-setup")
+	// !!! then do processing of all commits for returned commit log for the list of ami's
+
+	//!!! check what other(s) repo's to process	gitLog("dp-ci")
+	// !!! then do processing of all commits for returned commit log for the list of ami's
+
 }
 
 func check(err error) {
@@ -67,6 +93,7 @@ func TemporalDir() (path string, clean func()) {
 	}
 }
 
+// !!! clean all of this function up ...
 func gitLog(repoName string) {
 	// Clones the given repository, creating the remote, the local branches
 	// and fetching the objects, everything in memory:
