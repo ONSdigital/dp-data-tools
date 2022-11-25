@@ -50,26 +50,27 @@ const (
 	AmiNoLongerUsed                  // 3
 )
 
-type AmiOccurences struct {
-	Filename   string `json:"Filename"`
-	Line       string `json:"Line"`
-	CommitHash string `json:"CommitHash"`
-	RepoName   string `json:"RepoName"`
+type AmiOccurrences struct {
+	Filename   string    `json:"Filename"`
+	Line       string    `json:"Line"`
+	CommitHash string    `json:"CommitHash"`
+	CommitDate time.Time `json:"CommitDate"`
+	RepoName   string    `json:"RepoName"`
 }
 
 type AmiNameAndData struct {
-	Name          string          `json:"Name"`
-	ImageId       string          `json:"ImageId"`
-	CreationDate  string          `json:"CreationDate"`
-	ConvertedDate time.Time       `json:"ConvertedDate"`
-	Status        amiStatus       `json:"Status"`
-	Occurences    []AmiOccurences `json:"Occurences"`
+	Name          string           `json:"Name"`
+	ImageId       string           `json:"ImageId"`
+	CreationDate  string           `json:"CreationDate"`
+	ConvertedDate time.Time        `json:"ConvertedDate"`
+	Status        amiStatus        `json:"Status"`
+	Occurrences   []AmiOccurrences `json:"Occurrences"`
 }
 
 var AllImageInfo []AmiNameAndData
 
-func (element *AmiNameAndData) AddItem(occurence AmiOccurences) {
-	element.Occurences = append(element.Occurences, occurence)
+func (element *AmiNameAndData) AddItem(occurrence AmiOccurrences) {
+	element.Occurrences = append(element.Occurrences, occurrence)
 }
 
 func main() {
@@ -382,12 +383,13 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 							if strings.Contains(line.Content, ami.Name) {
 								fmt.Printf("found: %s\n", line.Content)
 								// and save info
-								var occurence AmiOccurences
-								occurence.CommitHash = commitList[i].commitHash
-								occurence.Filename = diffFile.Name
-								occurence.Line = line.Content
-								occurence.RepoName = repoName
-								AllImageInfo[imageIndex].AddItem(occurence)
+								var occurrence AmiOccurrences
+								occurrence.CommitHash = commitList[i].commitHash
+								occurrence.CommitDate = commitList[i].commitDate
+								occurrence.Filename = diffFile.Name
+								occurrence.Line = line.Content
+								occurrence.RepoName = repoName
+								AllImageInfo[imageIndex].AddItem(occurrence)
 								count++ //!!! temp, trash
 							}
 						}
@@ -405,7 +407,7 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 	// take many iterations
 	for _, ami := range AllImageInfo {
 		fmt.Printf("ami name: %s\n", ami.Name)
-		for _, occ := range ami.Occurences {
+		for _, occ := range ami.Occurrences {
 			fmt.Printf("%v\n", occ)
 		}
 	}
