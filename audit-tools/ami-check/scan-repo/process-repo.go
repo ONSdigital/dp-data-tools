@@ -51,11 +51,13 @@ const (
 )
 
 type AmiOccurrences struct {
-	Filename   string    `json:"Filename"`
-	Line       string    `json:"Line"`
-	CommitHash string    `json:"CommitHash"`
-	CommitDate time.Time `json:"CommitDate"`
-	RepoName   string    `json:"RepoName"`
+	Filename     string    `json:"Filename"`
+	Line         string    `json:"Line"`
+	LineIndex    int       `json:"LineIndex"`
+	sectionIndex int       `json:"sectionIndex"`
+	CommitHash   string    `json:"CommitHash"`
+	CommitDate   time.Time `json:"CommitDate"`
+	RepoName     string    `json:"RepoName"`
 }
 
 type AmiNameAndData struct {
@@ -374,8 +376,8 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 		fmt.Printf("\ni is: %d    Date: %v\n", i, commitList[i].commitDate)
 		for _, diffFile := range diff.Files {
 			fmt.Printf("Name: %s\n", diffFile.Name)
-			for _, section := range diffFile.Sections {
-				for _, line := range section.Lines {
+			for sectionIndex, section := range diffFile.Sections {
+				for lineIndex, line := range section.Lines {
 					if line.Content[0] == '+' || line.Content[0] == '-' {
 						// check changed lines
 						for imageIndex, ami := range AllImageInfo {
@@ -388,7 +390,9 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 								occurrence.CommitDate = commitList[i].commitDate
 								occurrence.Filename = diffFile.Name
 								occurrence.Line = line.Content
+								occurrence.LineIndex = lineIndex
 								occurrence.RepoName = repoName
+								occurrence.sectionIndex = sectionIndex
 								AllImageInfo[imageIndex].AddItem(occurrence)
 								count++ //!!! temp, trash
 							}
