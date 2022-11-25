@@ -18,9 +18,11 @@ package main
 // 0 to 6 months old
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -31,8 +33,9 @@ import (
 )
 
 const (
-	tmpDir     = "../tmp"
-	resultsDir = "../results"
+	tmpDir        = "../tmp"
+	resultsDir    = "../results/"
+	amiIdFileName = "all-ami-ids.txt"
 )
 
 // amiStatus the state of an AMI
@@ -51,17 +54,52 @@ type AmiNameAndData struct {
 	CreationDate  string
 	ConvertedDate time.Time
 	Status        amiStatus
+	Filename      string
+	Line          string
 }
 
 var AllImageInfo []AmiNameAndData
 
 func main() {
-	// !!! read in the ami id's
+	// read in the ami id's, creation date and name
+	amiDataFile, err := os.Open(resultsDir + amiIdFileName)
+	check(err)
+	defer func() {
+		cerr := amiDataFile.Close()
+		if cerr != nil {
+			fmt.Printf("problem closing: %s : %v\n", resultsDir+amiIdFileName, cerr)
+		}
+	}()
+
+	// first read through file to get amiId, creation date and name
+	amiDataScan := bufio.NewScanner(amiDataFile)
+
+	var totalAmis int
+
+	// for each event line extract container name and buld up a map of individual container names
+	for amiDataScan.Scan() {
+		fields := strings.Fields(amiDataScan.Text())
+
+		if len(fields) != 3 {
+			fmt.Printf("error in %s file. expected 'ami ID', 'creation date', 'name', but got %v\n", resultsDir+amiIdFileName, fields)
+			os.Exit(1)
+		}
+		var info AmiNameAndData
+
+		info.ImageId = strings.TrimRight(fields[0], ",")      // remove comma separator
+		info.CreationDate = strings.TrimRight(fields[1], ",") // remove comma separator
+		info.Name = fields[2]
+
+		AllImageInfo = append(AllImageInfo, info)
+		totalAmis++
+	}
+	err = amiDataScan.Err()
+	check(err)
 
 	//!!! fix logging of errors.
 
-	// !!! pass into gitlog, the oldest creation date to limit how far back it looks to this date minus 1 month (just to be sure)
-	gitLog("dp-setup")
+	// pass into gitlog, the oldest creation date to limit how far back it looks to this date minus 1 month (just to be sure)
+	gitLog("dp-setup", AllImageInfo[totalAmis-1].CreationDate)
 	// !!! then do processing of all commits for returned commit log for the list of ami's
 
 	//!!! check what other(s) repo's to process	gitLog("dp-ci")
@@ -94,7 +132,7 @@ func TemporalDir() (path string, clean func()) {
 }
 
 // !!! clean all of this function up ...
-func gitLog(repoName string) {
+func gitLog(repoName string, oldestAmiCreationDate string) {
 	// Clones the given repository, creating the remote, the local branches
 	// and fetching the objects, everything in memory:
 	/* fullRepoURL := "https://github.com/ONSdigital/" + repoName
@@ -135,9 +173,21 @@ func gitLog(repoName string) {
 	ref, err := r.Head()
 	CheckIfError(err)
 
+	since := time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC) //initialise to 2010
+
+	f, ferr := time.Parse(time.RFC3339, oldestAmiCreationDate) // time format with nanoseconds
+	if ferr != nil {
+		fmt.Printf("error in oldestAmiCreationDate: %v\n", ferr)
+	} else {
+		since = f
+	}
+
+	// subtract a month from start time (just to be sure)
+	since = since.AddDate(0, -1, 0)
+
 	// ... retrieves the commit history
-	since := time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)   //!!! fix to 2010
-	until := time.Date(2022, 11, 23, 0, 0, 0, 0, time.UTC) //!!! fix to current data and time
+	until := time.Now()
+	//	until := time.Date(2022, 11, 23, 0, 0, 0, 0, time.UTC) //!!! fix to current data and time
 	cIter, err := r.Log(&git.LogOptions{From: ref.Hash(), Since: &since, Until: &until})
 	CheckIfError(err)
 
@@ -262,7 +312,7 @@ func gitLog(repoName string) {
 	}
 
 	// lets go crazy on all commits
-	for i := total - 1; i > 1; i++ {
+	for i := total - 1; i > 1; i-- {
 		diff, err := GetDiff(&gitRepo, &DiffOptions{
 			AfterCommitID:     hashesString[i],
 			MaxLineCharacters: 5000,

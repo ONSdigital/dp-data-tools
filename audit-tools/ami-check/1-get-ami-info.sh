@@ -25,6 +25,6 @@ aws sso login --profile dp-prod
 aws ec2 describe-images --owner self --output json | jq . >tmp/prod-amis.json
 
 # process the json files
-cd get-info || exit
+cd get-ami-info || exit
 go run process-ami-json.go
 cd ..
