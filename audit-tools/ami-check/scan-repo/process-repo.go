@@ -54,7 +54,7 @@ type AmiOccurrences struct {
 	Filename     string    `json:"Filename"`
 	Line         string    `json:"Line"`
 	LineIndex    int       `json:"LineIndex"`
-	sectionIndex int       `json:"sectionIndex"`
+	SectionIndex int       `json:"SectionIndex"`
 	CommitHash   string    `json:"CommitHash"`
 	CommitDate   time.Time `json:"CommitDate"`
 	RepoName     string    `json:"RepoName"`
@@ -392,7 +392,7 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 								occurrence.Line = line.Content
 								occurrence.LineIndex = lineIndex
 								occurrence.RepoName = repoName
-								occurrence.sectionIndex = sectionIndex
+								occurrence.SectionIndex = sectionIndex
 								AllImageInfo[imageIndex].AddItem(occurrence)
 								count++ //!!! temp, trash
 							}
