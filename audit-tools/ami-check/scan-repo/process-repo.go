@@ -24,10 +24,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -51,13 +51,13 @@ const (
 )
 
 type AmiOccurrences struct {
-	Filename     string    `json:"Filename"`
-	Line         string    `json:"Line"`
-	LineIndex    int       `json:"LineIndex"`
-	SectionIndex int       `json:"SectionIndex"`
-	CommitHash   string    `json:"CommitHash"`
-	CommitDate   time.Time `json:"CommitDate"`
-	RepoName     string    `json:"RepoName"`
+	FilePathAndName string    `json:"FilePathAndName"`
+	Line            string    `json:"Line"`
+	LineIndex       int       `json:"LineIndex"`
+	SectionIndex    int       `json:"SectionIndex"`
+	CommitHash      string    `json:"CommitHash"`
+	CommitDate      time.Time `json:"CommitDate"`
+	RepoName        string    `json:"RepoName"`
 }
 
 type AmiNameAndData struct {
@@ -66,6 +66,7 @@ type AmiNameAndData struct {
 	CreationDate  string           `json:"CreationDate"`
 	ConvertedDate time.Time        `json:"ConvertedDate"`
 	Status        amiStatus        `json:"Status"`
+	LastUsedDate  time.Time        `json:"LastUsedDate"`
 	Occurrences   []AmiOccurrences `json:"Occurrences"`
 }
 
@@ -110,6 +111,9 @@ func main() {
 			fmt.Printf("error in info.CreationDate: %v\n", ferr)
 			//!!! may need to stop here as we will need a good creation date for later processing.
 		} else {
+			// subtract a day from start time , for later comparisons to function
+			f = f.AddDate(0, 0, -1)
+
 			info.ConvertedDate = f
 		}
 
@@ -122,7 +126,10 @@ func main() {
 	//!!! fix logging of errors.
 
 	// pass into gitlog, the oldest creation date to limit how far back it looks to this date minus 1 month (just to be sure)
-	gitLog("dp-setup", AllImageInfo[totalAmis-1].CreationDate)
+	start := time.Now()
+	gitLogDiffProcess("dp-setup", AllImageInfo[totalAmis-1].CreationDate)
+	elapsed := time.Since(start)
+	fmt.Printf("gitLogDiffProcess took: %s", elapsed)
 	// !!! then do processing of all commits for returned commit log for the list of ami's
 	// NOPE, save to results dir by repo-name and wether we are on main or awsb ...
 
@@ -159,7 +166,7 @@ func TemporalDir() (path string, clean func()) {
 }
 
 // !!! clean all of this function up ...
-func gitLog(repoName string, oldestAmiCreationDate string) {
+func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 	// Clones the given repository, creating the remote, the local branches
 	// and fetching the objects, everything in memory:
 	/* fullRepoURL := "https://github.com/ONSdigital/" + repoName
@@ -209,7 +216,7 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 		since = f
 	}
 
-	// subtract a month from start time (just to be sure)
+	// subtract a month from start time to ensure we capture all ami usage (just to be sure)
 	since = since.AddDate(0, -1, 0)
 
 	// ... retrieves the commit history
@@ -217,27 +224,16 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 	cIter, err := r.Log(&git.LogOptions{From: ref.Hash(), Since: &since, Until: &until})
 	CheckIfError(err)
 
-	// !!! have a struct for the commit to store the below +, expanding these: Author Signature
-	// to contain the time ...
-	/*
-			   commit 19b2a81203a35e717b316fd9c05edef0d2f73e24
-		   Author: red <red54321@outlook.com>
-		   Date:   Thu Nov 24 13:39:20 2022 +0000
-
-		       Merge branch 'release/1.145.0'
-	*/
-
-	var total int
+	var totalCommits int
 	type commitInfo struct {
 		commitHash string
 		commitDate time.Time
 	}
 	var commitList []commitInfo
 
-	// ... just iterates over the commits, printing it
+	// Iterate over the commits, saving commit hash and commit date
 	err = cIter.ForEach(func(c *object.Commit) error {
-		// fmt.Println(c)
-		total++
+		totalCommits++
 		var cInfo commitInfo
 		cInfo.commitHash = c.Hash.String()
 		cInfo.commitDate = c.Author.When
@@ -246,120 +242,24 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 	})
 	CheckIfError(err)
 
-	// the above does not include HEAD, so manually add:
-	total++
-	var cInfo commitInfo
-	commit, err := r.CommitObject(ref.Hash())
-	CheckIfError(err)
-	cInfo.commitHash = commit.Hash.String()
-	cInfo.commitDate = commit.Author.When
-	commitList = append(commitList, cInfo)
+	fmt.Printf("Number of logs found in %s, is: %d\n", repoName, totalCommits)
 
-	fmt.Printf("Number of logs found in %s, is: %d\n", repoName, total)
-
-	/*	fmt.Printf("\nShowing last 10 hashes:\n")
-		for i, comm := range commitList {
-			if i >= total-10 {
-				fmt.Printf("%v, %v\n", comm.commitHash, comm.commitDate)
-			}
-		}*/
-
-	/*
-	   !!! try to get some sort of diff between commits working, such that th ediff can be searched for ami id's
-
-	   	... may need to use worktree or tree's somehow ...
-
-	   var fromCommit git.Commit
-
-	   fromCommit.Hash = &hashes[total-2]
-
-	   var toCommit git.Commit
-
-	   toCommit.Hash = &hashes[total-1]
-
-	   patch, err := &fromCommit.Patch(&toCommit)
-	   fmt.Printf("%v\n", *patch)
-	*/
-
-	// ... retrieving the branch being pointed by HEAD
-	//ref, err := r.Head()
-	//CheckIfError(err)
-	// ... retrieving the commit object
-	//	commit, err := r.CommitObject(ref.Hash())
-	//	CheckIfError(err)
-
-	fmt.Println(commit)
-	spew.Dump(commit)
+	// the commitList is not sorted, so ...
+	// sort commits by commit date, oldest last ... so that the search order aligns with true github history.
+	sort.Slice(commitList, func(i, j int) bool {
+		return commitList[i].commitDate.Before(commitList[j].commitDate)
+	})
 
 	var gitRepo Repository
 	gitRepo.Ctx = context.Background()
 	gitRepo.Path = directory
 
-	/*	var repo repo_Repository
-		repo.OwnerName = "ONSdigital"
-		repo.Name = "dp-setup"
-		//!!! init its path ?
-	*/
-
-	/* the following is a known commit for checking purposes:
-
-	   commit 19b2a81203a35e717b316fd9c05edef0d2f73e24
-	   Author: red <red54321@outlook.com>
-	   Date:   Thu Nov 24 13:39:20 2022 +0000
-
-	       Merge branch 'release/1.145.0'
-
-	*/
-
-	/*	commitIdString := "19b2a81203a35e717b316fd9c05edef0d2f73e24"*/
-
-	/*	// Retrieve files affected by the commit
-		fileStatus, err := GetCommitFileStatus(gitRepo.Ctx, repo.RepoPath(), commitIdString)
-		if err != nil {
-			os.Exit(2)
-			// TODO
-			//		return nil, err
-		}
-		affectedFileList := make([]*CommitAffectedFiles, 0, len(fileStatus.Added)+len(fileStatus.Removed)+len(fileStatus.Modified))
-		for _, files := range [][]string{fileStatus.Added, fileStatus.Removed, fileStatus.Modified} {
-			for _, filename := range files {
-				affectedFileList = append(affectedFileList, &CommitAffectedFiles{
-					Filename: filename,
-				})
-			}
-		}
-		spew.Dump(affectedFileList)*/
-
-	/*	diff, err := GetDiff(&gitRepo, &DiffOptions{
-			AfterCommitID:     commitIdString, //hashesString[total-1],
-			MaxLineCharacters: 5000,
-			MaxLines:          1000,
-			MaxFiles:          1000,
-		})
-		if err != nil {
-			os.Exit(1)
-			// TODO
-			//return nil, err
-		}
-		//	fmt.Printf("diff is: %v\n", diff)
-		//	spew.Dump(diff)
-
-		for _, diffFile := range diff.Files {
-			fmt.Printf("\nName: %s\n\n", diffFile.Name)
-			for _, section := range diffFile.Sections {
-				for _, line := range section.Lines {
-					fmt.Println(line.Content)
-				}
-			}
-		}*/
-
-	count := 20 //!!! temp, trash
-	// lets go crazy on all commits
-	for i := total - 1; i > 1; i-- {
+	// Process all of the commits, looking to see where ami.Name is used
+	for i := totalCommits - 1; i > 1; i-- {
 		diff, err := GetDiff(&gitRepo, &DiffOptions{
 			AfterCommitID:     commitList[i].commitHash,
 			MaxLineCharacters: 5000,
-			MaxLines:          1000,
+			MaxLines:          4000,
 			MaxFiles:          1000,
 		})
 		if err != nil {
@@ -368,65 +268,42 @@ func gitLog(repoName string, oldestAmiCreationDate string) {
 			//return nil, err
 		}
 
-		// !!! an optimisation:
-		// !!! loop for all amiId's
-		//!!! amiId creation date minus 1 month is greater than the commit date,
-		// then remove it from the list of amiId's to search for in each line
-
-		fmt.Printf("\ni is: %d    Date: %v\n", i, commitList[i].commitDate)
+		fmt.Printf("\ni is: %d    Date: %v  Hash: %v\n", i, commitList[i].commitDate, commitList[i].commitHash)
 		for _, diffFile := range diff.Files {
 			fmt.Printf("Name: %s\n", diffFile.Name)
-			for sectionIndex, section := range diffFile.Sections {
-				for lineIndex, line := range section.Lines {
-					if line.Content[0] == '+' || line.Content[0] == '-' {
-						// check changed lines
-						for imageIndex, ami := range AllImageInfo {
-							// look for ami id's in line
-							if strings.Contains(line.Content, ami.Name) {
-								fmt.Printf("found: %s\n", line.Content)
-								// and save info
-								var occurrence AmiOccurrences
-								occurrence.CommitHash = commitList[i].commitHash
-								occurrence.CommitDate = commitList[i].commitDate
-								occurrence.Filename = diffFile.Name
-								occurrence.Line = line.Content
-								occurrence.LineIndex = lineIndex
-								occurrence.RepoName = repoName
-								occurrence.SectionIndex = sectionIndex
-								AllImageInfo[imageIndex].AddItem(occurrence)
-								count++ //!!! temp, trash
+			for imageIndex, ami := range AllImageInfo {
+				// look for ami id's in line
+				if commitList[i].commitDate.After(ami.ConvertedDate) {
+					for sectionIndex, section := range diffFile.Sections {
+						for lineIndex, line := range section.Lines {
+							if line.Content[0] == '+' || line.Content[0] == '-' {
+								// check changed lines
+								if strings.Contains(line.Content, ami.Name) {
+									fmt.Printf("found: %s\n", line.Content)
+									// and save info
+									var occurrence AmiOccurrences
+									occurrence.CommitHash = commitList[i].commitHash
+									occurrence.CommitDate = commitList[i].commitDate
+									occurrence.FilePathAndName = diffFile.Name
+									occurrence.Line = line.Content
+									occurrence.LineIndex = lineIndex
+									occurrence.RepoName = repoName
+									occurrence.SectionIndex = sectionIndex
+									AllImageInfo[imageIndex].AddItem(occurrence)
+								}
 							}
 						}
 					}
 				}
 			}
 		}
-		// if count > 10 { //!!! temp, trash
-		// 	break
-		// }
 	}
 
-	// !!! for debug, display all info found ... eventually save this to a file with some ssort of structure to it ?
-	// ... and then a 3rd app can analyse, as this app takes a long time to run and figuring out analysis may
-	// take many iterations
-	for _, ami := range AllImageInfo {
-		fmt.Printf("ami name: %s\n", ami.Name)
-		for _, occ := range ami.Occurrences {
-			fmt.Printf("%v\n", occ)
-		}
-	}
-	//!!! save struct as a json file, that will make it easy for next app to read in !!!
-
+	//save struct as a json file, that will make it easy for next app to read in
 	file, _ := json.MarshalIndent(AllImageInfo, "", " ")
 
-	err = ioutil.WriteFile("test.json", file, 0644)
+	err = ioutil.WriteFile(repoName+".json", file, 0644)
 	CheckIfError(err)
-	// res.Files = affectedFileList
-	// res.Stats = &api.CommitStats{
-	// 	Total:     diff.TotalAddition + diff.TotalDeletion,
-	// 	Additions: diff.TotalAddition,
-	// 	Deletions: diff.TotalDeletion,
-	// }
 }
 
 // CheckIfError should be used to naively panics if an error is not nil.
