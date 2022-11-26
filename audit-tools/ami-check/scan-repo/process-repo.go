@@ -92,7 +92,7 @@ func main() {
 
 	var totalAmis int
 
-	// for each event line extract container name and buld up a map of individual container names
+	// process each line of ami info
 	for amiDataScan.Scan() {
 		fields := strings.Fields(amiDataScan.Text())
 
@@ -245,7 +245,7 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 	// save struct as a json file, that will make it easy for next app to read in
 	file, _ := json.MarshalIndent(AllImageInfo, "", " ")
 
-	err = ioutil.WriteFile(resultsDir+repoName+".json", file, 0644)
+	err = ioutil.WriteFile(tmpDir+repoName+".json", file, 0644)
 	CheckIfError(err)
 }
 
