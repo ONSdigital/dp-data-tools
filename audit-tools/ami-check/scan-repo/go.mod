@@ -3,7 +3,6 @@ module github.com/ONSdigital/dp-data-tools/audit-tools/manifest-check
 go 1.19
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/djherbis/buffer v1.2.0
 	github.com/djherbis/nio/v3 v3.0.1
 	github.com/go-enry/go-enry/v2 v2.8.3
@@ -11,7 +10,6 @@ require (
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f
 	golang.org/x/net v0.0.0-20210326060303-6b1517762897
 	golang.org/x/text v0.3.3
-	gopkg.in/src-d/go-billy.v4 v4.3.2
 )
 
 require (

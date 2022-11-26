@@ -1,5 +1,7 @@
 package main
 
+//!!! fix these comments to say what inputs used, what is done, and what is saved
+
 // This utility is a work in progress ...
 // currently it gets all of the commit hash's from a repo.
 //
@@ -30,8 +32,6 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"gopkg.in/src-d/go-billy.v4/osfs"
-	"gopkg.in/src-d/go-billy.v4/util"
 )
 
 const (
@@ -125,20 +125,11 @@ func main() {
 
 	//!!! fix logging of errors.
 
-	// pass into gitlog, the oldest creation date to limit how far back it looks to this date minus 1 month (just to be sure)
 	start := time.Now()
+	// pass into gitLogDiffProcess, the oldest creation date to limit how far back it looks to this date
 	gitLogDiffProcess("dp-setup", AllImageInfo[totalAmis-1].CreationDate)
 	elapsed := time.Since(start)
 	fmt.Printf("gitLogDiffProcess took: %s", elapsed)
-	// !!! then do processing of all commits for returned commit log for the list of ami's
-	// NOPE, save to results dir by repo-name and wether we are on main or awsb ...
-
-	//!!! check what other(s) repo's to process	gitLog("dp-ci")
-	// !!! then do processing of all commits for returned commit log for the list of ami's
-	// NOPE, save to results dir by repo-name and wether we are on main or awsb ...
-
-	// !!! a 3rd app will either merge the results and process alll into some sort of final result
-	// ... or process each of the results at a time and create some final result ...
 }
 
 func check(err error) {
@@ -147,63 +138,15 @@ func check(err error) {
 	}
 }
 
-func displayAndSave(resultsFile *os.File, line string) {
-	fmt.Printf("%s", line)
-	_, err := fmt.Fprint(resultsFile, line)
-	check(err)
-}
-
-func TemporalDir() (path string, clean func()) {
-	fs := osfs.New(os.TempDir())
-	path, err := util.TempDir(fs, "", "")
-	if err != nil {
-		panic(err)
-	}
-
-	return fs.Join(fs.Root(), path), func() {
-		util.RemoveAll(fs, path)
-	}
-}
-
 // !!! clean all of this function up ...
 func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
-	// Clones the given repository, creating the remote, the local branches
-	// and fetching the objects, everything in memory:
-	/* fullRepoURL := "https://github.com/ONSdigital/" + repoName
-	Info("git clone:")
-	Info(fullRepoURL)
-	r, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-		URL: fullRepoURL,
-	})
-	CheckIfError(err)*/
-
-	//dir, clean := TemporalDir()
-	//defer clean()
-
-	// read 'repoName' into in memory structure for SUPER FAST processing later on
-	// (we will need to access and manipulate the in memory structure a lot, so speed will be very important)
-	//	r, err := git.PlainClone(dir, false, &git.CloneOptions{
-	//		URL:        "../../../../" + repoName,
-	//		RemoteName: "test",
-	//	})
-
-	// Get the working directory for the repository
-	//	w, err := r.Worktree()
-	//	CheckIfError(err)
-
+	// construct the path to the repo to be processed
 	directory := "../../../../" + repoName
 	// Opens an already existing repository.
 	r, err := git.PlainOpen(directory)
 	CheckIfError(err)
 
-	//	w, err := r.Worktree()
-	//	CheckIfError(err)
-
-	// Gets the HEAD history from HEAD, just like this command:
-	Info("git log")
-	//	Info(directory)
-
-	// ... retrieves the branch pointed by HEAD
+	// Retrieves the branch pointed to by HEAD
 	ref, err := r.Head()
 	CheckIfError(err)
 
@@ -219,7 +162,7 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 	// subtract a month from start time to ensure we capture all ami usage (just to be sure)
 	since = since.AddDate(0, -1, 0)
 
-	// ... retrieves the commit history
+	// Retrieve the commit history
 	until := time.Now()
 	cIter, err := r.Log(&git.LogOptions{From: ref.Hash(), Since: &since, Until: &until})
 	CheckIfError(err)
@@ -299,10 +242,10 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 		}
 	}
 
-	//save struct as a json file, that will make it easy for next app to read in
+	// save struct as a json file, that will make it easy for next app to read in
 	file, _ := json.MarshalIndent(AllImageInfo, "", " ")
 
-	err = ioutil.WriteFile(repoName+".json", file, 0644)
+	err = ioutil.WriteFile(resultsDir+repoName+".json", file, 0644)
 	CheckIfError(err)
 }
 
@@ -315,92 +258,3 @@ func CheckIfError(err error) {
 	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
 	os.Exit(1)
 }
-
-// Info should be used to describe the example commands that are about to run.
-func Info(format string, args ...interface{}) {
-	fmt.Printf("\x1b[34;1m%s\x1b[0m\n", fmt.Sprintf(format, args...))
-}
-
-// !!! look thru:
-// ~/go/pkg/mod/github.com/go-git
-
-/*
-in there see:
-worktree_commit_test.go
-	function: TestCommitTreeSort
-		... what can be written into: TemporalFilesystem()
-
-also, see:
-worktree_test.go
-	function: TestPullFastForward
-		... or do i use TemporalDir()
-
-	function: TestPullAdd()
-		where: &CloneOptions{
-				 URL: filepath.Join(path, ".git"),
-				}
-
-
-GetDiff( in gitea's services/gitdiff/gitdiff.go   ... copy and adapt this function ?
-	... and then how this is called from routers/web/repo/commit.go
-
-	the simplest call to it is (which gets diffs after commit.ID ), from function ToCommit(),
-	in modules/convert/git_commit.go:
-		diff, err := gitdiff.GetDiff(gitRepo, &gitdiff.DiffOptions{
-			AfterCommitID: commit.ID.String(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		res.Files = affectedFileList
-		res.Stats = &api.CommitStats{
-			Total:     diff.TotalAddition + diff.TotalDeletion,
-			Additions: diff.TotalAddition,
-			Deletions: diff.TotalDeletion,
-		}
-
-	... also see pull.go use of GetDiff()
-*/
-//fixtures.
-//local
-
-// for code to try and list files and their paths in a commit
-// possibly code that uses: NewTreeWalker() ... look at test code.
-
-// !!! go git stuff to read over:
-
-/*
-
-https://ish-ar.io/tutorial-go-git/
-
-https://www.youtube.com/watch?v=tg2yN6ax-xs
-
-https://medium.com/@clm160/tag-example-with-go-git-library-4377a84bbf17
-
-https://pkg.go.dev/github.com/go-git/go-git/v5
-
-https://github.com/go-git/go-git
-
-https://chromium.googlesource.com/external/github.com/src-d/go-git/+/8b0c2116cea2bbcc8d0075e762b887200a1898e1/example_test.go
-
-Also pull the code for 'gitea' and see how that uses go-git lib
-
-
-also pulumi:
-
-how does this use go-git:
-
-https://github.com/pulumi/pulumi/tree/master/pkg
-
-and look at these links:
-
-https://github.com/search?q=org%3Apulumi+go-git&type=Code
-
-
-this code looks useful:
-
-https://github.com/pulumi/pulumi/blob/4478bc0f695b17ec68e8d8e92a3202a038999741/sdk/go/auto/git_test.go
-
-
-
-*/
