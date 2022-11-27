@@ -2,15 +2,11 @@ package main
 
 //!!! fix these comments to say what inputs used, what is done, and what is saved
 
-// This utility is a work in progress ...
-// currently it gets all of the commit hash's from a repo.
-//
-// It will utilise the file ../results/all-ami-ids.txt
+// It will utilise the file ../tmp/<repoName>.json
 //
 // Ultimately it will try to determine how ONS creaded AMI's are used, by determining:
 // 1. what ami id's are in use
-// 2. what ami id's were used (and if they are the parent or grandparent to one that is in use
-//	 - this bit may be VERY difficult to determine)
+// 2. what ami id's are no longer used and the last date used.
 // 3. what ami id's have never been used
 //
 // together with the age of the ami id's grouped by age
@@ -22,13 +18,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"time"
 )
 
 const (
-	tmpDir        = "../tmp"
+	tmpDir        = "../tmp/"
 	resultsDir    = "../results/"
 	amiIdFileName = "all-ami-ids.txt"
 	repoName      = "dp-setup"
@@ -72,7 +68,12 @@ func (element *AmiNameAndData) AddItem(occurrence AmiOccurrences) {
 
 func main() {
 	// read in json struct of scanned data ...
-	file, err := ioutil.ReadFile(tmpDir + repoName + ".json")
+	// Open our jsonFile
+	jsonFile, err := os.Open(tmpDir + repoName + ".json")
+	//!!! improve the following
+	check(err)
+
+	file, err := io.ReadAll(jsonFile)
 	//!!! improve the following
 	check(err)
 
@@ -98,28 +99,28 @@ func check(err error) {
 func processScan() {
 	fmt.Printf("Number of amis to process is: %d\n", len(AllImageInfo))
 
-	// the commitList is not sorted, so ...
-	// sort commits by commit date, oldest last ... so that the search order aligns with true github history.
-	/*	sort.Slice(commitList, func(i, j int) bool {
-		return commitList[i].commitDate.Before(commitList[j].commitDate)
-	})*/
+	// !!! accumulate conclusions about any ami's and write to some results file
+	// !!! add a script that calls all the 3 step scripts
 
 	neverUsedCount := 0
-	for _, ami := range AllImageInfo {
+	for a, ami := range AllImageInfo {
 		var amiUsed bool
+		amiPluses := 0
+		amiMinuses := 0
 		if ami.Occurrences == nil {
-			fmt.Printf("Not used: %s\n", ami.Name)
+			fmt.Printf("Never used  : %50s   %v\n", ami.Name, ami.CreationDate)
+			AllImageInfo[a].Status = AmiNeverUsed
 			neverUsedCount++
 		} else {
-			fmt.Printf("\nHistory of: %s\n", ami.Name)
-			var occurrences []AmiOccurrences
+			fmt.Printf("\nHistory of: %50s   %v\n", ami.Name, ami.CreationDate)
 
-			//!!! have a var for the lastUsedDate  that is initialised to 2010
-			// build list of all occurrences and list of all unique filenames
+			// Initialize to date beyond any possible oldest
+			AllImageInfo[a].LastUsedDate = time.Date(2010, 1, 1, 1, 1, 1, 0, time.Local)
+
+			// build list of all unique filenames
 			var fileNames []string
 			for _, occurrence := range ami.Occurrences {
-				occurrences = append(occurrences, occurrence)
-				if contains(fileNames, occurrence.FilePathAndName) == false {
+				if !contains(fileNames, occurrence.FilePathAndName) {
 					fileNames = append(fileNames, occurrence.FilePathAndName)
 				}
 			}
@@ -129,12 +130,22 @@ func processScan() {
 				var firstName bool
 				for _, occurrence := range ami.Occurrences {
 					if fileName == occurrence.FilePathAndName {
-						if firstName == false && occurrence.Line[0] == '-' {
-							//!!! save fileName and date in lastUsedDate if the date of this line is newer than what is in lastUsedDate
-							// maybe save the whole occurrens struct ?
+						if occurrence.Line[0] == '-' {
+							amiMinuses++
+							if !firstName {
+								if occurrence.CommitDate.After(AllImageInfo[a].LastUsedDate) {
+									AllImageInfo[a].LastUsedDate = occurrence.CommitDate
+								}
+
+								//!!! save fileName and date in lastUsedDate if the date of this line is newer than what is in lastUsedDate
+								// maybe save the whole occurrence struct ?
+							}
 						}
-						if firstName == false && occurrence.Line[0] == '+' {
-							inUse = true
+						if occurrence.Line[0] == '+' {
+							amiPluses++
+							if !firstName {
+								inUse = true
+							}
 						}
 						firstName = true
 						fmt.Printf("    %s ||| %3d ||| %v\n", occurrence.Line, occurrence.LineIndex, occurrence.CommitDate)
@@ -144,17 +155,27 @@ func processScan() {
 					fmt.Printf(">>>>>>>> In Use <<<<<<<<\n")
 					amiUsed = true
 				} else {
-					//!!! now we need to go check if the ami Name no longer exists in the 'reponame'+occurrence.FilePathAndName
-					//occurrence.RepoName = repoName
-					// because the last change may have been to delete it in one place in a file BUT it still exists in
-					// one or more places in the file.
-					// !!! if the ami name no longer exists in te file, declare its lastUsedDate, etc
 					fmt.Printf("-------- Not in Use ----\n")
 				}
 			}
-		}
-		if amiUsed {
-			fmt.Printf("\n******** AMI used: %s ********\n\n", ami.Name)
+
+			if amiUsed {
+				fmt.Printf("\n******** AMI used: %s ********\n\n", ami.Name)
+				AllImageInfo[a].Status = AmiInUse
+			} else {
+				if amiPluses != amiMinuses {
+					// Hmm something may be a little adrift, so:
+					// Now we need to go check if the ami Name no longer exists in ami[].occurrence.RepoName,
+					// because the last change may have been to delete it in one place in a file BUT it still exists in
+					// one or more other places in one or more files.
+
+					//!!! add code to recurse thru repo for all files and search for ami name in each line of every file ...
+					// ... just to be sure !!!
+				}
+				fmt.Printf("\n******** AMI No Longer used: %s ********  Last Used: %v\n\n", ami.Name, AllImageInfo[a].LastUsedDate)
+				AllImageInfo[a].Status = AmiNoLongerUsed
+			}
+			fmt.Printf("amiPluses: %d   amiMinuses: %d\n", amiPluses, amiMinuses)
 		}
 	}
 	fmt.Printf("Out of: %d ami's, Not used is: %d\n", len(AllImageInfo), neverUsedCount)
