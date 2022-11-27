@@ -98,7 +98,7 @@ func main() {
 	check(err)
 	defer resultsFile.Close()
 
-	// check each manifest file
+	// check each environment file
 	for _, jName := range environmentFiles {
 		jFile, err := os.ReadFile(jName)
 		if err != nil {
@@ -115,6 +115,7 @@ func main() {
 
 		var environmentImageFiles []AmiNameAndData
 
+		// extract and accumulate list of info for each ami
 		for _, image := range amiInfo.Images {
 			var imageFile AmiNameAndData
 			imageFile.ImageId = image.ImageID
@@ -165,9 +166,9 @@ func main() {
 	}
 
 	AllImageFiles = removeDuplicateImageId(AllImageFiles)
-	// sort by putting oldest last
+	// sort by putting oldest first
 	sort.Slice(AllImageFiles, func(i, j int) bool {
-		return AllImageFiles[j].ConvertedDate.Before(AllImageFiles[i].ConvertedDate)
+		return AllImageFiles[i].ConvertedDate.Before(AllImageFiles[j].ConvertedDate)
 	})
 
 	idsFile, err := os.Create(resultsDir + "/all-ami-ids.txt")
