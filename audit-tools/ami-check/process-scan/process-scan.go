@@ -57,6 +57,7 @@ type AmiNameAndData struct {
 	ConvertedDate time.Time        `json:"ConvertedDate"`
 	Status        amiStatus        `json:"Status"`
 	LastUsedDate  time.Time        `json:"LastUsedDate"`
+	LastUsedFile  string           `json:"LastUsedFile"`
 	Occurrences   []AmiOccurrences `json:"Occurrences"`
 }
 
@@ -136,6 +137,7 @@ func processScan() {
 							if !firstName {
 								if occurrence.CommitDate.After(AllImageInfo[a].LastUsedDate) {
 									AllImageInfo[a].LastUsedDate = occurrence.CommitDate
+									AllImageInfo[a].LastUsedFile = fileName
 								}
 
 								//!!! save fileName and date in lastUsedDate if the date of this line is newer than what is in lastUsedDate
@@ -220,7 +222,7 @@ func processScan() {
 		case AmiNeverUsed:
 			displayAndSave(resultsFile, "Never Used\n")
 		case AmiNoLongerUsed:
-			displayAndSave(resultsFile, fmt.Sprintf("No longer used since: %v\n", ami.LastUsedDate))
+			displayAndSave(resultsFile, fmt.Sprintf("No longer used since: %v  in file:%s\n", ami.LastUsedDate, ami.LastUsedFile))
 		default:
 		}
 	}
