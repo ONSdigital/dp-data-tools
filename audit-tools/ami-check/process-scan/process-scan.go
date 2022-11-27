@@ -24,10 +24,10 @@ import (
 )
 
 const (
-	tmpDir        = "../tmp/"
-	resultsDir    = "../results/"
-	amiIdFileName = "all-ami-ids.txt"
-	repoName      = "dp-setup"
+	tmpDir     = "../tmp/"
+	resultsDir = "../results/"
+	resultFile = "ami-used-status.txt"
+	repoName   = "dp-setup"
 )
 
 // amiStatus the state of an AMI
@@ -60,6 +60,7 @@ type AmiNameAndData struct {
 	Occurrences   []AmiOccurrences `json:"Occurrences"`
 }
 
+// AllImageInfo is read in from a file and it is pre sorted by oldest ami first
 var AllImageInfo []AmiNameAndData
 
 func (element *AmiNameAndData) AddItem(occurrence AmiOccurrences) {
@@ -179,6 +180,57 @@ func processScan() {
 		}
 	}
 	fmt.Printf("Out of: %d ami's, Not used is: %d\n", len(AllImageInfo), neverUsedCount)
+
+	// Output a results file similar to what is done in the first script and tag on the end of each
+	// line the ami's Status (in english) and if applicable the last used date.
+	resultsFile, err := os.Create(resultsDir + resultFile)
+	check(err)
+	defer resultsFile.Close()
+
+	var printedSixMonths bool
+	sixMonthsAgo := time.Now().AddDate(0, -6, 0)
+
+	var printedTwelveMonths bool
+	twelveMonthsAgo := time.Now().AddDate(0, -12, 0)
+
+	var printedTwentyFourMonths bool
+	twentyFourMonthsAgo := time.Now().AddDate(0, -24, 0)
+
+	fmt.Printf("\n\n")
+
+	displayAndSave(resultsFile, "AMI used status:\n")
+	displayAndSave(resultsFile, fmt.Sprintf("%-50s, %-25s, %-25s,   Status\n", "Name", "ImageId", "CreationDate"))
+	for _, ami := range AllImageInfo {
+		if !printedTwentyFourMonths && (ami.ConvertedDate).After(twentyFourMonthsAgo) {
+			printedTwentyFourMonths = true
+			displayAndSave(resultsFile, "Created 24 to 12 months ago:\n")
+		}
+		if !printedTwelveMonths && (ami.ConvertedDate).After(twelveMonthsAgo) {
+			printedTwelveMonths = true
+			displayAndSave(resultsFile, "Created 12 to 6 months ago:\n")
+		}
+		if !printedSixMonths && (ami.ConvertedDate).After(sixMonthsAgo) {
+			printedSixMonths = true
+			displayAndSave(resultsFile, "Created in last 6 months:\n")
+		}
+		displayAndSave(resultsFile, fmt.Sprintf("%50s, %25s, %s  -> ", ami.Name, ami.ImageId, ami.CreationDate))
+		switch ami.Status {
+		case AmiInUse:
+			displayAndSave(resultsFile, "In Use\n")
+		case AmiNeverUsed:
+			displayAndSave(resultsFile, "Never Used\n")
+		case AmiNoLongerUsed:
+			displayAndSave(resultsFile, fmt.Sprintf("No longer used since: %v\n", ami.LastUsedDate))
+		default:
+		}
+	}
+	displayAndSave(resultsFile, "\n")
+}
+
+func displayAndSave(resultsFile *os.File, line string) {
+	fmt.Printf("%s", line)
+	_, err := fmt.Fprint(resultsFile, line)
+	check(err)
 }
 
 // CheckIfError should be used to naively panics if an error is not nil.
