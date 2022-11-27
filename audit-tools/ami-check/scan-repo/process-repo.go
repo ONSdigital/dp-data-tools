@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	tmpDir        = "../tmp"
+	tmpDir        = "../tmp/"
 	resultsDir    = "../results/"
 	amiIdFileName = "all-ami-ids.txt"
 )
@@ -127,7 +127,7 @@ func main() {
 
 	start := time.Now()
 	// pass into gitLogDiffProcess, the oldest creation date to limit how far back it looks to this date
-	gitLogDiffProcess("dp-setup", AllImageInfo[totalAmis-1].CreationDate)
+	gitLogDiffProcess("dp-setup", AllImageInfo[0].CreationDate)
 	elapsed := time.Since(start)
 	fmt.Printf("gitLogDiffProcess took: %s", elapsed)
 }
