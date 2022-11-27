@@ -145,20 +145,20 @@ func main() {
 		var printedTwentyFourMonths bool
 		twentyFourMonthsAgo := time.Now().AddDate(0, -24, 0)
 
-		displayAndSave(resultsFile, fmt.Sprintf("Sorted Images: %s\n", jName))
+		displayAndSave(resultsFile, fmt.Sprintf("Sorted Images, used in: %s\n", jName))
 		displayAndSave(resultsFile, fmt.Sprintf("%-50s, %-25s, %s\n", "Name", "ImageId", "CreationDate"))
 		for _, image := range environmentImageFiles {
 			if !printedTwentyFourMonths && (image.ConvertedDate).After(twentyFourMonthsAgo) {
 				printedTwentyFourMonths = true
-				displayAndSave(resultsFile, "Less than 24 months old:\n")
+				displayAndSave(resultsFile, "Created 24 to 12 months ago:\n")
 			}
 			if !printedTwelveMonths && (image.ConvertedDate).After(twelveMonthsAgo) {
 				printedTwelveMonths = true
-				displayAndSave(resultsFile, "Less than 12 months old:\n")
+				displayAndSave(resultsFile, "Created 12 to 6 months ago:\n")
 			}
 			if !printedSixMonths && (image.ConvertedDate).After(sixMonthsAgo) {
 				printedSixMonths = true
-				displayAndSave(resultsFile, "Less than 6 months old:\n")
+				displayAndSave(resultsFile, "Created in last 6 months:\n")
 			}
 			displayAndSave(resultsFile, fmt.Sprintf("%50s, %25s, %s\n", image.Name, image.ImageId, image.CreationDate))
 		}
