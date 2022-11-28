@@ -1,30 +1,18 @@
 package main
 
-//!!! fix these comments to say what inputs used, what is done, and what is saved
-
 // This utility is a work in progress ...
 // currently it gets all of the commit hash's from a repo.
 //
 // It will utilise the file ../results/all-ami-ids.txt
 //
-// Ultimately it will try to determine how ONS creaded AMI's are used, by determining:
-// 1. what ami id's are in use
-// 2. what ami id's were used (and if they are the parent or grandparent to one that is in use
-//	 - this bit may be VERY difficult to determine)
-// 3. what ami id's have never been used
-//
-// together with the age of the ami id's grouped by age
-// older than two years,
-// one to two years old,
-// 6 to 12 months old
-// 0 to 6 months old
+// It writes out a file in ../tmp/dp-setup.json
+// that contains all of the diff info for all relevant commits.
 
 import (
 	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -68,6 +56,11 @@ type AmiNameAndData struct {
 	Status        amiStatus        `json:"Status"`
 	LastUsedDate  time.Time        `json:"LastUsedDate"`
 	Occurrences   []AmiOccurrences `json:"Occurrences"`
+}
+
+type commitInfo struct {
+	commitHash string
+	commitDate time.Time
 }
 
 var AllImageInfo []AmiNameAndData
@@ -168,10 +161,7 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 	CheckIfError(err)
 
 	var totalCommits int
-	type commitInfo struct {
-		commitHash string
-		commitDate time.Time
-	}
+
 	var commitList []commitInfo
 
 	// Iterate over the commits, saving commit hash and commit date
@@ -211,41 +201,13 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 			//return nil, err
 		}
 
-		fmt.Printf("\ni is: %d    Date: %v  Hash: %v\n", i, commitList[i].commitDate, commitList[i].commitHash)
-		for _, diffFile := range diff.Files {
-			fmt.Printf("Name: %s\n", diffFile.Name)
-			for imageIndex, ami := range AllImageInfo {
-				// look for ami id's in line
-				if commitList[i].commitDate.After(ami.ConvertedDate) {
-					for sectionIndex, section := range diffFile.Sections {
-						for lineIndex, line := range section.Lines {
-							if line.Content[0] == '+' || line.Content[0] == '-' {
-								// check changed lines
-								if strings.Contains(line.Content, ami.Name) {
-									fmt.Printf("found: %s\n", line.Content)
-									// and save info
-									var occurrence AmiOccurrences
-									occurrence.CommitHash = commitList[i].commitHash
-									occurrence.CommitDate = commitList[i].commitDate
-									occurrence.FilePathAndName = diffFile.Name
-									occurrence.Line = line.Content
-									occurrence.LineIndex = lineIndex
-									occurrence.RepoName = repoName
-									occurrence.SectionIndex = sectionIndex
-									AllImageInfo[imageIndex].AddItem(occurrence)
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		processDiff(diff, commitList, i, repoName)
 	}
 
 	// save struct as a json file, that will make it easy for next app to read in
 	file, _ := json.MarshalIndent(AllImageInfo, "", " ")
 
-	err = ioutil.WriteFile(tmpDir+repoName+".json", file, 0644)
+	err = os.WriteFile(tmpDir+repoName+".json", file, 0644)
 	CheckIfError(err)
 }
 
@@ -257,4 +219,38 @@ func CheckIfError(err error) {
 
 	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
 	os.Exit(1)
+}
+
+func processDiff(diff *Diff, commitList []commitInfo, i int, repoName string) {
+	fmt.Printf("\ni is: %d    Date: %v  Hash: %v\n", i, commitList[i].commitDate, commitList[i].commitHash)
+	for _, diffFile := range diff.Files {
+		fmt.Printf("Name: %s\n", diffFile.Name)
+		for imageIndex, ami := range AllImageInfo {
+			// look for ami id's in line
+			if commitList[i].commitDate.After(ami.ConvertedDate) {
+				for sectionIndex, section := range diffFile.Sections {
+					for lineIndex, line := range section.Lines {
+						if line.Content[0] == '+' || line.Content[0] == '-' {
+							// check changed lines
+							if strings.Contains(line.Content, ami.Name) {
+								fmt.Printf("found: %s\n", line.Content)
+								// and save info in time based ordering, effectively in the order of the commit date - that is oldest last,
+								// so that next app can pick out the first occurences of lines with ami id's in them easily on
+								// a file by file basis.
+								var occurrence AmiOccurrences
+								occurrence.CommitHash = commitList[i].commitHash
+								occurrence.CommitDate = commitList[i].commitDate
+								occurrence.FilePathAndName = diffFile.Name
+								occurrence.Line = line.Content
+								occurrence.LineIndex = lineIndex
+								occurrence.RepoName = repoName
+								occurrence.SectionIndex = sectionIndex
+								AllImageInfo[imageIndex].AddItem(occurrence)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
