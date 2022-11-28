@@ -72,7 +72,11 @@ func (element *AmiNameAndData) AddItem(occurrence AmiOccurrences) {
 func main() {
 	// read in the ami id's, creation date and name
 	amiDataFile, err := os.Open(resultsDir + amiIdFileName)
-	check(err)
+	if err != nil {
+		fmt.Printf("error opening %s file. Error %v\n", resultsDir+amiIdFileName, err)
+		os.Exit(1)
+	}
+
 	defer func() {
 		cerr := amiDataFile.Close()
 		if cerr != nil {
@@ -102,7 +106,7 @@ func main() {
 		f, ferr := time.Parse(time.RFC3339, info.CreationDate) // time format with nanoseconds
 		if ferr != nil {
 			fmt.Printf("error in info.CreationDate: %v\n", ferr)
-			//!!! may need to stop here as we will need a good creation date for later processing.
+			os.Exit(1)
 		} else {
 			// subtract a day from start time , for later comparisons to function
 			f = f.AddDate(0, 0, -1)
@@ -114,9 +118,10 @@ func main() {
 		totalAmis++
 	}
 	err = amiDataScan.Err()
-	check(err)
-
-	//!!! fix logging of errors.
+	if err != nil {
+		fmt.Printf("problem scannnig: %s : %v\n", resultsDir+amiIdFileName, err)
+		os.Exit(1)
+	}
 
 	start := time.Now()
 	// pass into gitLogDiffProcess, the oldest creation date to limit how far back it looks to this date
@@ -125,23 +130,16 @@ func main() {
 	fmt.Printf("gitLogDiffProcess took: %s", elapsed)
 }
 
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-// !!! clean all of this function up ...
 func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 	// construct the path to the repo to be processed
 	directory := "../../../../" + repoName
 	// Opens an already existing repository.
 	r, err := git.PlainOpen(directory)
-	CheckIfError(err)
+	CheckIfError(err, fmt.Sprintf("Can't open git directory: %s", directory))
 
 	// Retrieves the branch pointed to by HEAD
 	ref, err := r.Head()
-	CheckIfError(err)
+	CheckIfError(err, "Problem getting HEAD for commits")
 
 	since := time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC) //initialise to 2010
 
@@ -158,7 +156,7 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 	// Retrieve the commit history
 	until := time.Now()
 	cIter, err := r.Log(&git.LogOptions{From: ref.Hash(), Since: &since, Until: &until})
-	CheckIfError(err)
+	CheckIfError(err, "Problem getting iterator for commits")
 
 	var totalCommits int
 
@@ -173,7 +171,7 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 		commitList = append(commitList, cInfo)
 		return nil
 	})
-	CheckIfError(err)
+	CheckIfError(err, "Problem iterating over commits")
 
 	fmt.Printf("Number of logs found in %s, is: %d\n", repoName, totalCommits)
 
@@ -208,16 +206,16 @@ func gitLogDiffProcess(repoName string, oldestAmiCreationDate string) {
 	file, _ := json.MarshalIndent(AllImageInfo, "", " ")
 
 	err = os.WriteFile(tmpDir+repoName+".json", file, 0644)
-	CheckIfError(err)
+	CheckIfError(err, fmt.Sprint("Can't write to file: %s", tmpDir+repoName+".json"))
 }
 
 // CheckIfError should be used to naively panics if an error is not nil.
-func CheckIfError(err error) {
+func CheckIfError(err error, reason string) {
 	if err == nil {
 		return
 	}
 
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
+	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("reason: %s, error: %s", reason, err))
 	os.Exit(1)
 }
 

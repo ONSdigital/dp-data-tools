@@ -1163,165 +1163,6 @@ var (
 //	}{}
 )
 
-/*
-// GitServiceType represents a git service
-type GitServiceType int
-
-// enumerate all GitServiceType
-const (
-	NotMigrated      GitServiceType = iota // 0 not migrated from external sites
-	PlainGitService                        // 1 plain git service
-	GithubService                          // 2 github.com
-	GiteaService                           // 3 gitea service
-	GitlabService                          // 4 gitlab service
-	GogsService                            // 5 gogs service
-	OneDevService                          // 6 onedev service
-	GitBucketService                       // 7 gitbucket service
-	CodebaseService                        // 8 codebase service
-)
-
-// Mirror represents mirror information of a repository.
-type Mirror struct {
-	ID          int64       `xorm:"pk autoincr"`
-	RepoID      int64       `xorm:"INDEX"`
-	Repo        *Repository `xorm:"-"`
-	Interval    time.Duration
-	EnablePrune bool `xorm:"NOT NULL DEFAULT true"`
-
-	UpdatedUnix    TimeStamp `xorm:"INDEX"`
-	NextUpdateUnix TimeStamp `xorm:"INDEX"`
-
-	LFS         bool   `xorm:"lfs_enabled NOT NULL DEFAULT false"`
-	LFSEndpoint string `xorm:"lfs_endpoint TEXT"`
-
-	Address string `xorm:"-"`
-}
-
-// RepositoryStatus defines the status of repository
-type RepositoryStatus int
-
-// Conversion is an interface. A type implements Conversion will according
-// the custom method to fill into database and retrieve from database.
-type Conversion interface {
-	FromDB([]byte) error
-	ToDB() ([]byte, error)
-}
-
-// RepoUnit describes all units of a repository
-type RepoUnit struct { //revive:disable-line:exported
-	ID          int64
-	RepoID      int64      `xorm:"INDEX(s)"`
-	Type        int        `xorm:"INDEX(s)"`
-	Config      Conversion `xorm:"TEXT"`
-	CreatedUnix TimeStamp  `xorm:"INDEX CREATED"`
-}
-
-// LanguageStat describes language statistics of a repository
-type LanguageStat struct {
-	ID          int64 `xorm:"pk autoincr"`
-	RepoID      int64 `xorm:"UNIQUE(s) INDEX NOT NULL"`
-	CommitID    string
-	IsPrimary   bool
-	Language    string    `xorm:"VARCHAR(50) UNIQUE(s) INDEX NOT NULL"`
-	Percentage  float32   `xorm:"-"`
-	Size        int64     `xorm:"NOT NULL DEFAULT 0"`
-	Color       string    `xorm:"-"`
-	CreatedUnix TimeStamp `xorm:"INDEX CREATED"`
-}
-
-// RepoIndexerType specifies the repository indexer type
-type RepoIndexerType int //revive:disable-line:exported
-
-const (
-	// RepoIndexerTypeCode code indexer
-	RepoIndexerTypeCode RepoIndexerType = iota // 0
-	// RepoIndexerTypeStats repository stats indexer
-	RepoIndexerTypeStats // 1
-)
-
-// RepoIndexerStatus status of a repo's entry in the repo indexer
-// For now, implicitly refers to default branch
-type RepoIndexerStatus struct { //revive:disable-line:exported
-	ID          int64           `xorm:"pk autoincr"`
-	RepoID      int64           `xorm:"INDEX(s)"`
-	CommitSha   string          `xorm:"VARCHAR(40)"`
-	IndexerType RepoIndexerType `xorm:"INDEX(s) NOT NULL DEFAULT 0"`
-}
-
-// TrustModelType defines the types of trust model for this repository
-type TrustModelType int
-
-// kinds of TrustModel
-const (
-	DefaultTrustModel TrustModelType = iota // default trust model
-	CommitterTrustModel
-	CollaboratorTrustModel
-	CollaboratorCommitterTrustModel
-)*/
-
-/*// Repository represents a git repository.
-type repo_Repository struct {
-	ID                  int64 `xorm:"pk autoincr"`
-	OwnerID             int64 `xorm:"UNIQUE(s) index"`
-	OwnerName           string
-	Owner               *User          `xorm:"-"`
-	LowerName           string         `xorm:"UNIQUE(s) INDEX NOT NULL"`
-	Name                string         `xorm:"INDEX NOT NULL"`
-	Description         string         `xorm:"TEXT"`
-	Website             string         `xorm:"VARCHAR(2048)"`
-	OriginalServiceType GitServiceType `xorm:"index"`
-	OriginalURL         string         `xorm:"VARCHAR(2048)"`
-	DefaultBranch       string
-
-	NumWatches          int
-	NumStars            int
-	NumForks            int
-	NumIssues           int
-	NumClosedIssues     int
-	NumOpenIssues       int `xorm:"-"`
-	NumPulls            int
-	NumClosedPulls      int
-	NumOpenPulls        int `xorm:"-"`
-	NumMilestones       int `xorm:"NOT NULL DEFAULT 0"`
-	NumClosedMilestones int `xorm:"NOT NULL DEFAULT 0"`
-	NumOpenMilestones   int `xorm:"-"`
-	NumProjects         int `xorm:"NOT NULL DEFAULT 0"`
-	NumClosedProjects   int `xorm:"NOT NULL DEFAULT 0"`
-	NumOpenProjects     int `xorm:"-"`
-
-	IsPrivate  bool `xorm:"INDEX"`
-	IsEmpty    bool `xorm:"INDEX"`
-	IsArchived bool `xorm:"INDEX"`
-	IsMirror   bool `xorm:"INDEX"`
-	*Mirror    `xorm:"-"`
-	Status     RepositoryStatus `xorm:"NOT NULL DEFAULT 0"`
-
-	RenderingMetas         map[string]string `xorm:"-"`
-	DocumentRenderingMetas map[string]string `xorm:"-"`
-	Units                  []*RepoUnit       `xorm:"-"`
-	PrimaryLanguage        *LanguageStat     `xorm:"-"`
-
-	IsFork                          bool               `xorm:"INDEX NOT NULL DEFAULT false"`
-	ForkID                          int64              `xorm:"INDEX"`
-	BaseRepo                        *Repository        `xorm:"-"`
-	IsTemplate                      bool               `xorm:"INDEX NOT NULL DEFAULT false"`
-	TemplateID                      int64              `xorm:"INDEX"`
-	Size                            int64              `xorm:"NOT NULL DEFAULT 0"`
-	CodeIndexerStatus               *RepoIndexerStatus `xorm:"-"`
-	StatsIndexerStatus              *RepoIndexerStatus `xorm:"-"`
-	IsFsckEnabled                   bool               `xorm:"NOT NULL DEFAULT true"`
-	CloseIssuesViaCommitInAnyBranch bool               `xorm:"NOT NULL DEFAULT false"`
-	Topics                          []string           `xorm:"TEXT JSON"`
-
-	TrustModel TrustModelType
-
-	// Avatar: ID(10-20)-md5(32) - must fit into 64 symbols
-	Avatar string `xorm:"VARCHAR(64)"`
-
-	CreatedUnix TimeStamp `xorm:"INDEX created"`
-	UpdatedUnix TimeStamp `xorm:"INDEX updated"`
-}*/
-
 // EmptySHA defines empty git SHA
 const EmptySHA = "0000000000000000000000000000000000000000"
 
@@ -1766,7 +1607,8 @@ func CommonGitCmdEnvs() []string {
 // Run runs the command with the RunOpts
 func (c *Command) Run(opts *RunOpts) error {
 	if len(c.brokenArgs) != 0 {
-		//TODO log.Error("git command is broken: %s, broken args: %s", c.String(), strings.Join(c.brokenArgs, " "))
+		// log.Error("git command is broken: %s, broken args: %s", c.String(), strings.Join(c.brokenArgs, " "))
+		fmt.Printf("Error: git command is broken: %s, broken args: %s", c.String(), strings.Join(c.brokenArgs, " "))
 		return ErrBrokenCommand
 	}
 	if opts == nil {
@@ -1780,9 +1622,11 @@ func (c *Command) Run(opts *RunOpts) error {
 	}
 
 	if len(opts.Dir) == 0 {
-		//TODO log.Debug("%s", c)
+		// log.Debug("%s", c)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: %s", c)
 	} else {
-		//TODO log.Debug("%s: %v", opts.Dir, c)
+		// log.Debug("%s: %v", opts.Dir, c)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: %s: %v", opts.Dir, c)
 	}
 
 	desc := c.desc
@@ -1909,7 +1753,8 @@ func CatFileBatchCheck(ctx context.Context, repoPath string) (WriteCloserError, 
 // CatFileBatchCheck obtains a CatFileBatchCheck for this repository
 func (repo *Repository) CatFileBatchCheck(ctx context.Context) (WriteCloserError, *bufio.Reader, func()) {
 	if repo.checkCancel == nil || repo.checkReader.Buffered() > 0 {
-		//TODO log.Debug("Opening temporary cat file batch-check: %s", repo.Path)
+		//log.Debug("Opening temporary cat file batch-check: %s", repo.Path)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: Opening temporary cat file batch-check: %s", repo.Path)
 		return CatFileBatchCheck(ctx, repo.Path)
 	}
 	return repo.checkWriter, repo.checkReader, func() {}
@@ -2118,7 +1963,8 @@ func ReadBatchLine(rd *bufio.Reader) (sha []byte, typ string, size int64, err er
 	}
 	idx := strings.IndexByte(typ, ' ')
 	if idx < 0 {
-		//TODO log.Debug("missing space typ: %s", typ)
+		// log.Debug("missing space typ: %s", typ)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: missing space typ: %s", typ)
 		err = ErrNotExist{ID: string(sha)}
 		return
 	}
@@ -2475,7 +2321,8 @@ func (repo *Repository) getCommitFromBatchReader(rd *bufio.Reader, id SHA1) (*Co
 
 		return commit, nil
 	default:
-		//TODO log.Debug("Unknown typ: %s", typ)
+		// log.Debug("Unknown typ: %s", typ)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: Unknown typ: %s", typ)
 		_, err = rd.Discard(int(size) + 1)
 		if err != nil {
 			return nil, err
@@ -2544,7 +2391,8 @@ func CatFileBatch(ctx context.Context, repoPath string) (WriteCloserError, *bufi
 // CatFileBatch obtains a CatFileBatch for this repository
 func (repo *Repository) CatFileBatch(ctx context.Context) (WriteCloserError, *bufio.Reader, func()) {
 	if repo.batchCancel == nil || repo.batchReader.Buffered() > 0 {
-		//TODO log.Debug("Opening temporary cat file batch for: %s", repo.Path)
+		// log.Debug("Opening temporary cat file batch for: %s", repo.Path)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: Opening temporary cat file batch for: %s", repo.Path)
 		return CatFileBatch(ctx, repo.Path)
 	}
 	return repo.batchWriter, repo.batchReader, func() {}
@@ -3064,7 +2912,8 @@ func readFileName(rd *strings.Reader) (string, bool) {
 	if char == '"' {
 		fmt.Fscanf(rd, "%q ", &name)
 		if len(name) == 0 {
-			// TODO log.Error("Reader has no file name: reader=%+v", rd)
+			// log.Error("Reader has no file name: reader=%+v", rd)
+			fmt.Printf("Error: Reader has no file name: reader=%+v", rd)
 			return "", true
 		}
 
@@ -3086,7 +2935,8 @@ func readFileName(rd *strings.Reader) (string, bool) {
 		}
 	}
 	if len(name) < 2 {
-		// TODO log.Error("Unable to determine name from reader: reader=%+v", rd)
+		// log.Error("Unable to determine name from reader: reader=%+v", rd)
+		fmt.Printf("Error: Unable to determine name from reader: reader=%+v", rd)
 		return "", true
 	}
 	return name[2:], ambiguity
@@ -3185,7 +3035,8 @@ func ParseDiffHunkString(diffhunk string) (leftLine, leftHunk, rightLine, righHu
 			righHunk, _ = strconv.Atoi(rightRange[1])
 		}
 	} else {
-		// TODO log.Debug("Parse line number failed: %v", diffhunk)
+		// log.Debug("Parse line number failed: %v", diffhunk)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: Parse line number failed: %v", diffhunk)
 		rightLine = leftLine
 		righHunk = leftHunk
 	}
@@ -3457,7 +3308,8 @@ func DetectEncoding(content []byte) (string, error) {
 		toValidate = toValidate[:end-2]
 	}
 	if utf8.Valid(toValidate) {
-		// TODO log.Debug("Detected encoding: utf-8 (fast)")
+		// log.Debug("Detected encoding: utf-8 (fast)")
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: Detected encoding: utf-8 (fast)")
 		return "UTF-8", nil
 	}
 
@@ -3481,7 +3333,8 @@ func DetectEncoding(content []byte) (string, error) {
 	results, err := textDetector.DetectAll(detectContent)
 	if err != nil {
 		if err == chardet.NotDetectedError && len(setting_Repository.AnsiCharset) > 0 {
-			// TODO log.Debug("Using default AnsiCharset: %s", setting_Repository.AnsiCharset)
+			// log.Debug("Using default AnsiCharset: %s", setting_Repository.AnsiCharset)
+			// put back in if using a log lib that logs these things fmt.Printf("Debug: Using default AnsiCharset: %s", setting_Repository.AnsiCharset)
 			return setting_Repository.AnsiCharset, nil
 		}
 		return "", err
@@ -3508,11 +3361,13 @@ func DetectEncoding(content []byte) (string, error) {
 
 	// FIXME: to properly decouple this function the fallback ANSI charset should be passed as an argument
 	if topResult.Charset != "UTF-8" && len(setting_Repository.AnsiCharset) > 0 {
-		// TODO log.Debug("Using default AnsiCharset: %s", setting.Repository.AnsiCharset)
+		// log.Debug("Using default AnsiCharset: %s", setting.Repository.AnsiCharset)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: Using default AnsiCharset: %s", "FIXME" /*setting.Repository.AnsiCharset*/)
 		return setting_Repository.AnsiCharset, err
 	}
 
-	// TODO log.Debug("Detected encoding: %s", topResult.Charset)
+	// log.Debug("Detected encoding: %s", topResult.Charset)
+	// put back in if using a log lib that logs these things fmt.Printf("Debug: Detected encoding: %s", topResult.Charset)
 	return topResult.Charset, err
 }
 
@@ -3520,7 +3375,8 @@ const cmdDiffHead = "diff --git "
 
 // ParsePatch builds a Diff object from a io.Reader and some parameters.
 func ParsePatch(maxLines, maxLineCharacters, maxFiles int, reader io.Reader, skipToFile string) (*Diff, error) {
-	// TODO log.Debug("ParsePatch(%d, %d, %d, ..., %s)", maxLines, maxLineCharacters, maxFiles, skipToFile)
+	// log.Debug("ParsePatch(%d, %d, %d, ..., %s)", maxLines, maxLineCharacters, maxFiles, skipToFile)
+	// put back in if using a log lib that logs these things fmt.Printf("Debug: ParsePatch(%d, %d, %d, ..., %s)", maxLines, maxLineCharacters, maxFiles, skipToFile)
 	var curFile *DiffFile
 
 	skipping := skipToFile != ""
@@ -3911,7 +3767,8 @@ func (repo *Repository) ReadTreeToTemporaryIndex(treeish string) (filename, tmpD
 	cancel = func() {
 		err := RemoveAll(tmpDir)
 		if err != nil {
-			// TODO log.Error("failed to remove tmp index file: %v", err)
+			// log.Error("failed to remove tmp index file: %v", err)
+			fmt.Printf("Error: failed to remove tmp index file: %v", err)
 		}
 	}
 	err = repo.ReadTreeToIndex(treeish, filename)
@@ -4051,7 +3908,8 @@ func (c *CheckAttributeReader) Run() error {
 func (c *CheckAttributeReader) CheckPath(path string) (rs map[string]string, err error) {
 	defer func() {
 		if err != nil && err != c.ctx.Err() {
-			// TODO log.Error("Unexpected error when checking path %s in %s. Error: %v", path, c.Repo.Path, err)
+			// log.Error("Unexpected error when checking path %s in %s. Error: %v", path, c.Repo.Path, err)
+			fmt.Printf("Error: Unexpected error when checking path %s in %s. Error: %v", path, c.Repo.Path, err)
 		}
 	}()
 
@@ -4103,12 +3961,14 @@ func (repo *Repository) CheckAttributeReader(commitID string) (*CheckAttributeRe
 	}
 	ctx, cancel := context.WithCancel(repo.Ctx)
 	if err := checker.Init(ctx); err != nil {
-		// TODO log.Error("Unable to open checker for %s. Error: %v", commitID, err)
+		// log.Error("Unable to open checker for %s. Error: %v", commitID, err)
+		fmt.Printf("Error: Unable to open checker for %s. Error: %v", commitID, err)
 	} else {
 		go func() {
 			err := checker.Run()
 			if err != nil && err != ctx.Err() {
-				// TODO log.Error("Unable to open checker for %s. Error: %v", commitID, err)
+				// log.Error("Unable to open checker for %s. Error: %v", commitID, err)
+				fmt.Printf("Error: Unable to open checker for %s. Error: %v", commitID, err)
 			}
 			cancel()
 		}()
@@ -4224,7 +4084,8 @@ func ParseTreeLine(rd *bufio.Reader, modeBuf, fnameBuf, shaBuf []byte) (mode, fn
 	}
 	idx := bytes.IndexByte(readBytes, ' ')
 	if idx < 0 {
-		// TODO log.Debug("missing space in readBytes ParseTreeLine: %s", readBytes)
+		// log.Debug("missing space in readBytes ParseTreeLine: %s", readBytes)
+		// put back in if using a log lib that logs these things fmt.Printf("Debug: missing space in readBytes ParseTreeLine: %s", readBytes)
 
 		err = &ErrNotExist{}
 		return
@@ -4381,7 +4242,8 @@ loop:
 		case "40000", "40755": // git uses 40000 for tree object, but some users may get 40755 for unknown reasons
 			entry.entryMode = EntryModeTree
 		default:
-			// TODO log.Debug("Unknown mode: %v", string(mode))
+			// log.Debug("Unknown mode: %v", string(mode))
+			// put back in if using a log lib that logs these things fmt.Printf("Debug: Unknown mode: %v", string(mode))
 			return nil, fmt.Errorf("unknown mode: %v", string(mode))
 		}
 
@@ -4908,7 +4770,8 @@ func GetDiff(gitRepo *Repository, opts *DiffOptions, files ...string) (*Diff, er
 			Stderr:  os.Stderr,
 			Stdout:  writer,
 		}); err != nil {
-			// TODO. log.Error("error during RunWithContext: %w", err)
+			// log.Error("error during RunWithContext: %w", err)
+			fmt.Printf("Error: error during RunWithContext: %w", err)
 		}
 
 		_ = writer.Close()
@@ -4989,103 +4852,3 @@ func GetDiff(gitRepo *Repository, opts *DiffOptions, files ...string) (*Diff, er
 
 	return diff, nil
 }
-
-/*
-// UserPath returns the path absolute path of user repositories.
-func UserPath(userName string) string { //revive:disable-line:exported
-	return filepath.Join(RepoRootPath, strings.ToLower(userName))
-}
-
-// RepoPath returns repository path by given user and repository name.
-func RepoPath(userName, repoName string) string { //revive:disable-line:exported
-	return filepath.Join(UserPath(userName), strings.ToLower(repoName)+".git")
-}
-
-// RepoPath returns the repository path
-func (repo *repo_Repository) RepoPath() string {
-	return RepoPath(repo.OwnerName, repo.Name)
-}
-
-// CommitFileStatus represents status of files in a commit.
-type CommitFileStatus struct {
-	Added    []string
-	Removed  []string
-	Modified []string
-}
-
-// NewCommitFileStatus creates a CommitFileStatus
-func NewCommitFileStatus() *CommitFileStatus {
-	return &CommitFileStatus{
-		[]string{}, []string{}, []string{},
-	}
-}
-
-func parseCommitFileStatus(fileStatus *CommitFileStatus, stdout io.Reader) {
-	rd := bufio.NewReader(stdout)
-	peek, err := rd.Peek(1)
-	if err != nil {
-		if err != io.EOF {
-			// TODO log.Error("Unexpected error whilst reading from git log --name-status. Error: %v", err)
-		}
-		return
-	}
-	if peek[0] == '\n' || peek[0] == '\x00' {
-		_, _ = rd.Discard(1)
-	}
-	for {
-		modifier, err := rd.ReadSlice('\x00')
-		if err != nil {
-			if err != io.EOF {
-				// TODO log.Error("Unexpected error whilst reading from git log --name-status. Error: %v", err)
-			}
-			return
-		}
-		file, err := rd.ReadString('\x00')
-		if err != nil {
-			if err != io.EOF {
-				// TODO log.Error("Unexpected error whilst reading from git log --name-status. Error: %v", err)
-			}
-			return
-		}
-		file = file[:len(file)-1]
-		switch modifier[0] {
-		case 'A':
-			fileStatus.Added = append(fileStatus.Added, file)
-		case 'D':
-			fileStatus.Removed = append(fileStatus.Removed, file)
-		case 'M':
-			fileStatus.Modified = append(fileStatus.Modified, file)
-		}
-	}
-}
-
-// GetCommitFileStatus returns file status of commit in given repository.
-func GetCommitFileStatus(ctx context.Context, repoPath, commitID string) (*CommitFileStatus, error) {
-	stdout, w := io.Pipe()
-	done := make(chan struct{})
-	fileStatus := NewCommitFileStatus()
-	go func() {
-		parseCommitFileStatus(fileStatus, stdout)
-		close(done)
-	}()
-
-	stderr := new(bytes.Buffer)
-	err := NewCommand(ctx, "log", "--name-status", "-c", "--pretty=format:", "--parents", "--no-renames", "-z", "-1").AddDynamicArguments(commitID).Run(&RunOpts{
-		Dir:    repoPath,
-		Stdout: w,
-		Stderr: stderr,
-	})
-	w.Close() // Close writer to exit parsing goroutine
-	if err != nil {
-		return nil, ConcatenateError(err, stderr.String())
-	}
-
-	<-done
-	return fileStatus, nil
-}
-
-// CommitAffectedFiles store information about files affected by the commit
-type CommitAffectedFiles struct {
-	Filename string `json:"filename"`
-}
-*/
