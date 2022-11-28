@@ -1,10 +1,8 @@
 package main
 
-//!!! fix these comments to say what inputs used, what is done, and what is saved
-
-// It will utilise the file ../tmp/<repoName>.json
+// This app uses the file ../tmp/<repoName>.json
 //
-// Ultimately it will try to determine how ONS creaded AMI's are used, by determining:
+// It will determines how ONS creaded AMI's are used, by:
 // 1. what ami id's are in use
 // 2. what ami id's are no longer used and the last date used.
 // 3. what ami id's have never been used
@@ -16,10 +14,13 @@ package main
 // 0 to 6 months old
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -72,16 +73,27 @@ func main() {
 	// read in json struct of scanned data ...
 	// Open our jsonFile
 	jsonFile, err := os.Open(tmpDir + repoName + ".json")
-	//!!! improve the following
-	check(err)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Can't open file: %s", tmpDir+repoName+".json"), err)
+	}
+	defer jsonFile.Close()
+
+	defer func() {
+		cerr := jsonFile.Close()
+		if cerr != nil {
+			fmt.Printf("problem closing: %s : %v\n", tmpDir+repoName+".json", cerr)
+		}
+	}()
 
 	file, err := io.ReadAll(jsonFile)
-	//!!! improve the following
-	check(err)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Can't read all of file: %s", tmpDir+repoName+".json"), err)
+	}
 
 	err = json.Unmarshal([]byte(file), &AllImageInfo)
-	//!!! improve the following
-	check(err)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Can't unmarshal file: %s", tmpDir+repoName+".json"), err)
+	}
 
 	start := time.Now()
 
@@ -97,12 +109,8 @@ func check(err error) {
 	}
 }
 
-// !!! clean all of this function up ...
 func processScan() {
 	fmt.Printf("Number of amis to process is: %d\n", len(AllImageInfo))
-
-	// !!! accumulate conclusions about any ami's and write to some results file
-	// !!! add a script that calls all the 3 step scripts
 
 	neverUsedCount := 0
 	for a, ami := range AllImageInfo {
@@ -119,10 +127,12 @@ func processScan() {
 			// Initialize to date beyond any possible oldest
 			AllImageInfo[a].LastUsedDate = time.Date(2010, 1, 1, 1, 1, 1, 0, time.Local)
 
-			// build list of all unique filenames
+			// build list of all unique filenames that this ami is used in
 			var fileNames []string
 			for _, occurrence := range ami.Occurrences {
+				// is occurrence.FilePathAndName in the list?
 				if !contains(fileNames, occurrence.FilePathAndName) {
+					// no, so add it to list
 					fileNames = append(fileNames, occurrence.FilePathAndName)
 				}
 			}
@@ -135,13 +145,11 @@ func processScan() {
 						if occurrence.Line[0] == '-' {
 							amiMinuses++
 							if !firstName {
+								// save fileName and date in lastUsedDate if the date of this line is newer than what is in lastUsedDate
 								if occurrence.CommitDate.After(AllImageInfo[a].LastUsedDate) {
 									AllImageInfo[a].LastUsedDate = occurrence.CommitDate
 									AllImageInfo[a].LastUsedFile = fileName
 								}
-
-								//!!! save fileName and date in lastUsedDate if the date of this line is newer than what is in lastUsedDate
-								// maybe save the whole occurrence struct ?
 							}
 						}
 						if occurrence.Line[0] == '+' {
@@ -166,17 +174,54 @@ func processScan() {
 				fmt.Printf("\n******** AMI used: %s ********\n\n", ami.Name)
 				AllImageInfo[a].Status = AmiInUse
 			} else {
+				found := false
 				if amiPluses != amiMinuses {
 					// Hmm something may be a little adrift, so:
-					// Now we need to go check if the ami Name no longer exists in ami[].occurrence.RepoName,
+					// Now we need to go check if the ami Name no longer exists in the list of 'fileNames'
 					// because the last change may have been to delete it in one place in a file BUT it still exists in
 					// one or more other places in one or more files.
+					// ... just to be sure !
+					directory := "../../../../" + repoName
+					for _, fileName := range fileNames {
+						pathAndName := directory + "/" + fileName
+						fileHandle, err := os.Open(pathAndName)
+						if err == nil {
+							// The file still exists, so check if ami.Name is in it
+							defer fileHandle.Close()
 
-					//!!! add code to recurse thru repo for all files and search for ami name in each line of every file ...
-					// ... just to be sure !!!
+							defer func() {
+								cerr := fileHandle.Close()
+								if cerr != nil {
+									fmt.Printf("problem closing: %s : %v\n", pathAndName, cerr)
+								}
+							}()
+
+							scanner := bufio.NewScanner(fileHandle)
+							// optionally, resize scanner's capacity for lines over 64K, see next example
+							for scanner.Scan() {
+								if strings.Contains(scanner.Text(), ami.Name) {
+									found = true
+									break
+								}
+								fmt.Println(scanner.Text())
+							}
+
+							if err := scanner.Err(); err != nil {
+								log.Fatal(err)
+							}
+						}
+						if found {
+							break
+						}
+					}
 				}
-				fmt.Printf("\n******** AMI No Longer used: %s ********  Last Used: %v\n\n", ami.Name, AllImageInfo[a].LastUsedDate)
-				AllImageInfo[a].Status = AmiNoLongerUsed
+				if found {
+					fmt.Printf("\n******** After deeper file search AMI found to be used: %s ********\n\n", ami.Name)
+					AllImageInfo[a].Status = AmiInUse
+				} else {
+					fmt.Printf("\n******** AMI No Longer used: %s ********  Last Used: %v\n\n", ami.Name, AllImageInfo[a].LastUsedDate)
+					AllImageInfo[a].Status = AmiNoLongerUsed
+				}
 			}
 			fmt.Printf("amiPluses: %d   amiMinuses: %d\n", amiPluses, amiMinuses)
 		}
@@ -233,16 +278,6 @@ func displayAndSave(resultsFile *os.File, line string) {
 	fmt.Printf("%s", line)
 	_, err := fmt.Fprint(resultsFile, line)
 	check(err)
-}
-
-// CheckIfError should be used to naively panics if an error is not nil.
-func CheckIfError(err error) {
-	if err == nil {
-		return
-	}
-
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
-	os.Exit(1)
 }
 
 func contains(s []string, str string) bool {

@@ -1,2 +1,3 @@
 # NOTE
-!!! fix all of this
+
+See comments at start of process-scan.go for processing done.
