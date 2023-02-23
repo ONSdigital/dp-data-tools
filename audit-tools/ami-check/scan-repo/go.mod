@@ -9,7 +9,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f
 	golang.org/x/net v0.0.0-20210326060303-6b1517762897
-	golang.org/x/text v0.3.3
+	golang.org/x/text v0.3.8
 )
 
 require (
