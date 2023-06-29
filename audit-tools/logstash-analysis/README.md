@@ -111,7 +111,16 @@ Date: 2023-06-07 Counts: [            935         2   1   2    93               
 
 5. You should clean up the downloaded and created files once you are done.
    That is delete files in directories:
-   logstash-1/logstash
-   logstash-2/logstash
-   logstash-3/logstash
+
+   prod
+   sandbox
+   staging
   
+6. The output from running the analysis for the environments on the 29th June 2023
+   have been saved into these files (for people to easily see what the output looks like,
+   there is no colour highlighting in these text files as can be seen when running the app
+   in the terminal):
+
+   prod-analysis.txt
+   sandbox-analysis.txt
+   staging-analysis.txt
