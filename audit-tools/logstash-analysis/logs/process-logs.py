@@ -165,6 +165,8 @@ def process_line(line):
     if '[INFO ][logstash.inputs.s3       ] Registering {:bucket=>"ons-dp-sandbox-elb-logs", :region=>"eu-west-2"}' in line:
         return 68
     if '[INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 403 ({"type"=>"index_create_block_exception", "reason"=>"blocked by: [FORBIDDEN' in line:
+        # an example of the full log line with variable 'data' looks like:
+        # [INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 403 ({"type"=>"index_create_block_exception", "reason"=>"blocked by: [FORBIDDEN/10/cluster create-index blocked (api)];"})
         return 69
     if '[INFO ][logstash.inputs.s3       ] Registering {:bucket=>"ons-dp-sandbox-flow-logs", :region=>"eu-west-2"}' in line:
         return 70
