@@ -7,3 +7,7 @@
 logstash-1/
 logstash-2/
 logstash-3/
+
+prod/
+sandbox/
+staging/

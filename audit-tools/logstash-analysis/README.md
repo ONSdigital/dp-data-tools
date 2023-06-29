@@ -3,27 +3,47 @@
 Code in this repo (in the logs directory) is used to look at the errors in logstash logs
 and come up with counts of the different errors observed, and also counts of such errors per day.
 
-The reason for doing this is that as of 7th June 2023 there are
-far to many errors in the logs and we need a way of determining
-if any "fixes" are making a difference.
+The reason for doing this is that as of 7th June 2023 there are far to many errors in the logs
+and we need a way of determining if any "fixes" are making a difference.
 
-The output of the scripts enable us to have a clear view of the distribution of each kind of log line.
+The output of the scripts enable us to have a clear view of the distribution of each kind of log line,
+and when they start to appear or tail away.
 
-By running the code and recording the results, making some changes/fixes ... then waiting 24 hours and running the analysis again ...
-We can look at the daily counts of the last 24 hours and compare to previous days to see if there is any
-improvement (reduction) in the numbers of errors seen.
+By running the code and recording the results, making some changes/fixes ... then waiting 24 hours and
+running the analysis again ...
+
+We can look at the daily counts of the last 24 hours and compare to previous days/weeks/months to see
+if there is any improvement (reduction) in the numbers of errors seen.
 
 -=-=-
 
 First select the environment from where you want to get the logs from.
 
-1. cd into 'logs' and run the script, which will take a while and you will be prompted to answer 'yes':
+1. cd into 'logs' and run the script to match the environment you are interested in, which will take
+   a while and for 'prod' you will be prompted to answer 'yes':
 
-  get-all-logs.sh
+  get-prod-logs.sh
+
+   or:
+
+  get-sandbox-logs.sh
+
+   or:
+
+  get-staging-logs.sh
 
 2. Then run script:
   
-  process-logs.py
+  (this defaults to prod):
+  ./process-logs.py
+
+   or:
+
+  ./process-logs.py sandbox
+
+   or:
+
+  ./process-logs.py staging
 
   NOTE: This script may fail - indicating a new log that it does not recognise.
         If that happens then update the function in it called 'process_line' accordingly.

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import sys
 from pathlib import Path
 import gzip
 from dateutil.parser import parse
@@ -135,9 +136,56 @@ def process_line(line):
         return 57
     if '[INFO ][logstash.outputs.amazonelasticsearch] Retrying individual bulk actions that failed or were rejected by the previous bulk request. {:count=>' in line:
         return 58
+    
+    # additional seen in 'staging':
+    if '[INFO ][logstash.inputs.s3       ] Registering {:bucket=>"ons-dp-staging-elb-logs", :region=>"eu-west-2"}' in line:
+        return 59
+    if '[INFO ][logstash.inputs.s3       ] Registering {:bucket=>"ons-dp-staging-flow-logs", :region=>"eu-west-2"}' in line:
+        return 60
+    if '[ERROR][logstash.agent           ] Failed to execute action {:action=>LogStash::PipelineAction::Stop/pipeline_id:main, :exception=>"Java::JavaLang::NullPointerException", :message=>"", :backtrace=>["org.logstash.common.io.DeadLetterQueueReader.getCurrentSegment' in line:
+        return 61
+    if "[FATAL][org.logstash.Logstash    ] Logstash stopped processing because of an error: (Error) Don't know how to handle `Java::JavaLang::NullPointerException` for `PipelineAction::Stop<main>`" in line:
+        return 62
+    if '[WARN ][io.netty.util.concurrent.SingleThreadEventExecutor] Unexpected exception from an event executor' in line:
+        return 63
+    if '[ERROR][logstash.inputs.s3       ] Unable to list objects in bucket {:exception=>Aws::S3::Errors::SlowDown, :message=>"Please reduce your request rate."' in line:
+        return 64
+    
+    # additional seen in 'sandbox':
+    if '[ERROR][org.logstash.common.io.DeadLetterQueueWriter] cannot write event to DLQ(path: /var/lib/logstash/dead_letter_queue/main): reached maxQueueSize of 1073741824' in line:
+        return 65
+    if '[INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 403 ({"type"=>"cluster_block_exception", "reason"=>"index [' in line:
+        # an example of the full log line with variable 'data' looks like:
+        # [INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 403 ({"type"=>"cluster_block_exception", "reason"=>"index [applogs-2023-01-09] blocked by: [FORBIDDEN/4/index preparing to close. Reopen the index to allow writes again or retry closing the index to fully close the index.];"})
+        return 66
+    if '[INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 503 ({"type"=>"unavailable_shards_exception", "reason"=>"[' in line:
+        # an example of the full log line with variable 'data' looks like:
+        # [INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 503 ({"type"=>"unavailable_shards_exception", "reason"=>"[auditlog-2023-01-09][0] primary shard is not active Timeout: [1m], request: [BulkShardRequest [[auditlog-2023-01-09][0]] containing [28] requests]"})
+        return 67
+    if '[INFO ][logstash.inputs.s3       ] Registering {:bucket=>"ons-dp-sandbox-elb-logs", :region=>"eu-west-2"}' in line:
+        return 68
+    if '[INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 403 ({"type"=>"index_create_block_exception", "reason"=>"blocked by: [FORBIDDEN' in line:
+        return 69
+    if '[INFO ][logstash.inputs.s3       ] Registering {:bucket=>"ons-dp-sandbox-flow-logs", :region=>"eu-west-2"}' in line:
+        return 70
+    if '[ERROR][logstash.agent           ] Failed to execute action {:id=>:main, :action_type=>LogStash::ConvergeResult::FailedAction, :message=>"Expected one of' in line:
+        # an example of the full log line with variable 'data' looks like:
+        # [ERROR][logstash.agent           ] Failed to execute action {:id=>:main, :action_type=>LogStash::ConvergeResult::FailedAction, :message=>"Expected one of [ \\t\\r\\n], \"#\", [A-Za-z0-9_-], '\"', \"'\", [A-Za-z_], \"-\", [0-9], \"[\", \"{\" at line 10, column 80 (byte 262) after filter {\n  if [fields][type] == \"cantabular\" {\n    fingerprint {\n      source => [\"message\"]\n      target => \"[@metadata][fingerprint]\"\n      method => \"MURMUR3\"\n    }\n\n    mutate {\n      remove_field => [ \"agent\", \"offset\", \"host\", \"ecs\",\"port\",\"log\", \"input\",", :backtrace=>["/usr/share/logstash/logstash-core/lib/logstash/compiler.rb:32:in `compile_imperative'", "org/logstash/execution/AbstractPipelineExt.java:184:in `initialize'", "org/logstash/execution/JavaBasePipelineExt.java:69:in `initialize'", "/usr/share/logstash/logstash-core/lib/logstash/pipeline_action/reload.rb:53:in `execute'", "/usr/share/logstash/logstash-core/lib/logstash/agent.rb:371:in `block in converge_state'"]}
+        return 71
+    if "[ERROR][logstash.filters.mutate  ] Unknown setting 'match' for mutate" in line:
+        return 72
+    if '[ERROR][logstash.agent           ] Failed to execute action {:id=>:main, :action_type=>LogStash::ConvergeResult::FailedAction, :message=>"Unable to configure plugins: (ConfigurationError) Something is wrong with your configuration."' in line:
+        # an example of the full log line with variable 'data' looks like:
+        # [ERROR][logstash.agent           ] Failed to execute action {:id=>:main, :action_type=>LogStash::ConvergeResult::FailedAction, :message=>"Unable to configure plugins: (ConfigurationError) Something is wrong with your configuration.", :backtrace=>["org.logstash.config.ir.CompiledPipeline.<init>(CompiledPipeline.java:119)", "org.logstash.execution.JavaBasePipelineExt.initialize(JavaBasePipelineExt.java:83)", "org.logstash.execution.JavaBasePipelineExt$INVOKER$i$1$0$initialize.call(JavaBasePipelineExt$INVOKER$i$1$0$initialize.gen)", "org.jruby.internal.runtime.methods.JavaMethod$JavaMethodN.call(JavaMethod.java:837)", "org.jruby.runtime.callsite.CachingCallSite.cacheAndCall(CachingCallSite.java:332)", "org.jruby.runtime.callsite.CachingCallSite.call(CachingCallSite.java:86)", "org.jruby.RubyClass.newInstance(RubyClass.java:939)", "org.jruby.RubyClass$INVOKER$i$newInstance.call(RubyClass$INVOKER$i$newInstance.gen)", "org.jruby.ir.targets.InvokeSite.invoke(InvokeSite.java:207)", "usr.share.logstash.logstash_minus_core.lib.logstash.pipeline_action.reload.RUBY$method$execute$0(/usr/share/logstash/logstash-core/lib/logstash/pipeline_action/reload.rb:53)", "usr.share.logstash.logstash_minus_core.lib.logstash.pipeline_action.reload.RUBY$method$execute$0$__VARARGS__(/usr/share/logstash/logstash-core/lib/logstash/pipeline_action/reload.rb)", "org.jruby.internal.runtime.methods.CompiledIRMethod.call(CompiledIRMethod.java:80)", "org.jruby.internal.runtime.methods.MixedModeIRMethod.call(MixedModeIRMethod.java:70)", "org.jruby.ir.targets.InvokeSite.invoke(InvokeSite.java:207)", "usr.share.logstash.logstash_minus_core.lib.logstash.agent.RUBY$block$converge_state$2(/usr/share/logstash/logstash-core/lib/logstash/agent.rb:371)", "org.jruby.runtime.CompiledIRBlockBody.callDirect(CompiledIRBlockBody.java:138)", "org.jruby.runtime.IRBlockBody.call(IRBlockBody.java:58)", "org.jruby.runtime.IRBlockBody.call(IRBlockBody.java:52)", "org.jruby.runtime.Block.call(Block.java:139)", "org.jruby.RubyProc.call(RubyProc.java:318)", "org.jruby.internal.runtime.RubyRunnable.run(RubyRunnable.java:105)", "java.base/java.lang.Thread.run(Thread.java:834)"]}
+        return 73
+    if '[INFO ][org.logstash.beats.BeatsHandler] [local:' in line:
+        # an example of the full log line with variable 'data' looks like:
+        # [INFO ][org.logstash.beats.BeatsHandler] [local: 10.30.142.112:5044, remote: 10.30.142.234:42000] Handling exception: io.netty.handler.codec.DecoderException: org.logstash.beats.InvalidFrameProtocolException: Invalid version of beats protocol: 71 (caused by: org.logstash.beats.InvalidFrameProtocolException: Invalid version of beats protocol: 71)
+        return 74
 
     # Do something with 'line'
-    r_warn("Unknown error line: ", line)
+    warn = "Unknown error line: " + line
+    r_warn(warn)
     r_warn("You will need to add it to the above if's and add a new return code and process that accordingly wherever needed !")
     r_die(1, "Please fix the above problem")
 
@@ -208,8 +256,72 @@ def add_date(line):
 
 total_counts = {}   # a Dictionary of dates with the counts of each error on that day
 
+def usage(additional_info):
+    print("process-logs [<env>]")
+    print("")
+    print("optional argument:")
+    en = ""
+    for i, arg in enumerate(all_envs):
+        if i == 0:
+            en = arg
+        else:
+            en = en + " " + arg
+    print("    <env>     is one of: ", en)
+    print("")
+    print("Process logstash logs that have been downloaded for the desired environment")
+    if additional_info != "":
+        print("")
+        print(additional_info)
+        exit(2)
+    exit(1)
+
 # Where to get the log files from (that have been downloaded by other script)
-dir_list = ["logstash-1/logstash", "logstash-2/logstash", "logstash-3/logstash"]
+prod_dir_list = ["prod/logstash-1", "prod/logstash-2", "prod/logstash-3"]
+sandbox_dir_list = ["sandbox/logstash-1", "sandbox/logstash-2", "sandbox/logstash-3"]
+staging_dir_list = ["staging/logstash-1", "staging/logstash-2", "staging/logstash-3"]
+
+# process command args
+all_envs=["prod", "sandbox", "staging"]
+
+envs = []
+envs.append(all_envs[0]) # set default
+envs_from_args=0
+
+# parse args
+for i, arg in enumerate(sys.argv):
+    if i > 0:
+        if arg == "-h" or arg == "--help":
+            usage("")
+            exit(1)
+
+        arg_ok = 0
+
+        # check parameter matchs known environments, and if it does,
+        #  take just the one environment to process
+        for env in all_envs:
+            if arg == env:
+                if envs_from_args == 0:
+                    envs=[]
+                    envs_from_args = 1
+                envs.append(arg)
+                arg_ok=1
+        if arg_ok == 1:
+            break
+
+        usage("Unrecognised arg: "+arg)
+
+
+dir_list = []
+
+if envs[0] == "prod":
+    dir_list = prod_dir_list
+    r_info(f"{bcolors.BOLD}Processing: 'prod' logstash files\n")
+elif envs[0] == "sandbox":
+    dir_list = sandbox_dir_list
+    r_info(f"{bcolors.BOLD}Processing: 'sandbox' logstash files\n")
+elif envs[0] == "staging":
+    dir_list = staging_dir_list
+    r_info(f"{bcolors.BOLD}Processing: 'staging' logstash files\n")
 
 running_error_counts = [0] * MAX_ERRORS
 
