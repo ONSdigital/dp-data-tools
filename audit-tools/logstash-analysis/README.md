@@ -101,13 +101,25 @@ Date: 2023-06-05 Counts: [           2691         2       2   117               
 Date: 2023-06-06 Counts: [           2692         2   1   2   163                  1                      2                                                 2                                                                               ]
 Date: 2023-06-07 Counts: [            935         2   1   2    93                  1                      2                                                 2                                                                               ]
 
-4. When yo want to look into all of the log files, you can run: uncompress-all-to-three.sh
+4. When you want to look into all of the log files, you can run any of these:
 
-  This will uncompress all of the log files per box into one file per logstash box into these files:
+    uncompress-prod-to-three.sh
+    uncompress-sandbox-to-three.sh
+    uncompress-staging-to-three.sh
 
-    logs-1.txt
-    logs-2.txt
-    logs-3.txt
+  This will uncompress all of the log files per box into one file per logstash box into these files for respective environments:
+
+    prod-logs-1.txt
+    prod-logs-2.txt
+    prod-logs-3.txt
+
+    sandbox-logs-1.txt
+    sandbox-logs-2.txt
+    sandbox-logs-3.txt
+
+    staging-logs-1.txt
+    staging-logs-2.txt
+    staging-logs-3.txt
 
 5. You should clean up the downloaded and created files once you are done.
    That is delete files in directories:
