@@ -1,5 +1,7 @@
 #!/usr/local/bin/bash
 
+if [ -d "staging" ]; then rm -Rf staging; fi
+
 dp scp staging logstash 1 --pull --recurse /var/log/logstash/ logstash-1/
 
 dp scp staging logstash 2 --pull --recurse /var/log/logstash/ logstash-2/
