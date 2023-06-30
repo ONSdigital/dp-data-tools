@@ -12,14 +12,4 @@ prod/
 sandbox/
 staging/
 
-prod-logs-1.txt
-prod-logs-2.txt
-prod-logs-3.txt
-
-sandbox-logs-1.txt
-sandbox-logs-2.txt
-sandbox-logs-3.txt
-
-staging-logs-1.txt
-staging-logs-2.txt
-staging-logs-3.txt
+full-logs/

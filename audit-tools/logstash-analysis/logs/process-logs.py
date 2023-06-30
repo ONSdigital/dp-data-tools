@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import os
 from pathlib import Path
 import gzip
 from dateutil.parser import parse
@@ -29,6 +30,10 @@ def process_line(line):
     if "[WARN ][logstash.outputs.amazonelasticsearch] Marking url as dead. Last error: [LogStash::Outputs::AmazonElasticSearch::HttpClient::Pool::HostUnreachableError] Elasticsearch Unreachable:" in line:
         return 6
     if "[ERROR][logstash.filters.ruby    ] Ruby exception occurred: bad URI(is not URI?):" in line:
+        # examples of the above:
+        # [ERROR][logstash.filters.ruby    ] Ruby exception occurred: bad URI(is not URI?): http://web-prod-149552176.eu-west-2.elb.amazonaws.com:80-
+        # [ERROR][logstash.filters.ruby    ] Ruby exception occurred: bad URI(is not URI?): https://www.ons.gov.uk:443/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/regionbyindustry2digitsicashetable5\x22
+        # [ERROR][logstash.filters.ruby    ] Ruby exception occurred: bad URI(is not URI?): http://web-prod-149552176.eu-west-2.elb.amazonaws.com:443-
         return 7
     if '[ERROR][logstash.outputs.amazonelasticsearch] An unknown error occurred sending a bulk request to Elasticsearch. We will retry indefinitely {:error_message=>"no implicit conversion of nil into String"' in line:
         return 8
@@ -133,6 +138,8 @@ def process_line(line):
     if '[INFO ][logstash.agent           ] No persistent UUID file found. Generating new UUID' in line:
         return 56
     if '[INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 429' in line:
+        # an example of the full log line with variable 'data' looks like:
+        # [INFO ][logstash.outputs.amazonelasticsearch] retrying failed action with response code: 429 ({"type"=>"circuit_breaking_exception", "reason"=>"[parent] Data too large, data for [indices:data/write/bulk[s]] would be [4087188944/3.8gb], which is larger than the limit of [4063657984/3.7gb], real usage: [4087081784/3.8gb], new bytes reserved: [107160/104.6kb], usages [request=0/0b, fielddata=0/0b, in_flight_requests=107160/104.6kb, accounting=71938248/68.6mb]", "bytes_wanted"=>4087188944, "bytes_limit"=>4063657984, "durability"=>"PERMANENT"})
         return 57
     if '[INFO ][logstash.outputs.amazonelasticsearch] Retrying individual bulk actions that failed or were rejected by the previous bulk request. {:count=>' in line:
         return 58
@@ -327,93 +334,104 @@ elif envs[0] == "staging":
 
 running_error_counts = [0] * MAX_ERRORS
 
+full_log_path = "full-logs"
+
+if not os.path.exists(full_log_path):
+    os.makedirs(full_log_path)
+
 for dir in dir_list:
     d = f"{bcolors.OKCYAN}Directory: " + dir
     r_info(d)
 
-    for file in Path(dir).glob('*'):
-        daily_error_counts = [0] * MAX_ERRORS
+    result_name = dir.replace("/logstash", "") + ".txt"
+    result_name = full_log_path + "/" + result_name
+    with open(result_name, 'w') as result_file:
 
-        if "logstash-slowlog-plain" in str(file):
-            continue
+        for file in Path(dir).glob('*'):
+            daily_error_counts = [0] * MAX_ERRORS
 
-        if "logstash-plain.log" in str(file):
-            found_date = False
-            date_within_file = ""
-            with open(file) as f:
-                for line in f:
-                    if "error" in line or "ERROR" in line or "WARN" in line or "INFO" in line:
-                        if len(line) <= 2:
-                            continue
-                        if line[0] == " " and line[1] == " ":
-                            if "error" not in line:
+            if "logstash-slowlog-plain" in str(file):
+                continue
+
+            if "logstash-plain.log" in str(file):
+                found_date = False
+                date_within_file = ""
+                with open(file) as f:
+                    for line in f:
+                        result_file.write(line)
+                        if "error" in line or "ERROR" in line or "WARN" in line or "INFO" in line:
+                            if len(line) <= 2:
                                 continue
-                        e_num = process_line(line)
-                        if e_num >= MAX_ERRORS:
-                            # we should not get here, but just in case
-                            r_die(3, "MAX_ERRORS more than: ", MAX_ERRORS, " so, increase it")
-                        daily_error_counts[e_num] += 1
-                        if found_date == False:
-                            res, date_within_file = add_date(line)
-                            if res == True:
-                                found_date = True # we have found a date for this file
-                        if e_num > max_n:
-                            max_n = e_num
-            
-            daily_list = []
-            if date_within_file != "":
-                for i in range(MAX_ERRORS):
-                    running_error_counts[i] += daily_error_counts[i] # accumulate totals for check later to catch any code errors
-                    daily_list.append(daily_error_counts[i])
-
-                if date_within_file in total_counts:
-                    # add data from this logstash box to date from other box(es)
-                    existing_list = total_counts[date_within_file]
+                            if line[0] == " " and line[1] == " ":
+                                if "error" not in line:
+                                    continue
+                            e_num = process_line(line)
+                            if e_num >= MAX_ERRORS:
+                                # we should not get here, but just in case
+                                r_die(3, "MAX_ERRORS more than: ", MAX_ERRORS, " so, increase it")
+                            daily_error_counts[e_num] += 1
+                            if found_date == False:
+                                res, date_within_file = add_date(line)
+                                if res == True:
+                                    found_date = True # we have found a date for this file
+                            if e_num > max_n:
+                                max_n = e_num
+                
+                daily_list = []
+                if date_within_file != "":
                     for i in range(MAX_ERRORS):
-                        daily_list[i] += existing_list[i]
+                        running_error_counts[i] += daily_error_counts[i] # accumulate totals for check later to catch any code errors
+                        daily_list.append(daily_error_counts[i])
 
-                total_counts[date_within_file] = daily_list
-            else:
-                r_info("No date found in file: ", file) # Hmm ?
+                    if date_within_file in total_counts:
+                        # add data from this logstash box to date from other box(es)
+                        existing_list = total_counts[date_within_file]
+                        for i in range(MAX_ERRORS):
+                            daily_list[i] += existing_list[i]
 
-        if ".log.gz" in str(file):
-            found_date = False
-            date_within_file = ""
-            with gzip.open(file, 'rt') as f:
-                for line in f:
-                    if "error" in line or "ERROR" in line or "WARN" in line or "INFO" in line:
-                        if len(line) <= 2:
-                            continue
-                        if line[0] == " " and line[1] == " ":
-                            if "error" not in line:
+                    total_counts[date_within_file] = daily_list
+                else:
+                    r_info("No date found in file: ", file) # Hmm ?
+
+            if ".log.gz" in str(file):
+                found_date = False
+                date_within_file = ""
+                with gzip.open(file, 'rt') as f:
+                    for line in f:
+                        result_file.write(line)
+                        if "error" in line or "ERROR" in line or "WARN" in line or "INFO" in line:
+                            if len(line) <= 2:
                                 continue
-                        e_num = process_line(line)
-                        if e_num >= MAX_ERRORS:
-                            # we should not get here, but just in case
-                            r_die(3, "MAX_ERRORS more than: ", MAX_ERRORS, " so, increase it")
-                        daily_error_counts[e_num] += 1
-                        if found_date == False:
-                            res, date_within_file = add_date(line)
-                            if res == True:
-                                found_date = True # we have found a date for this file
-                        if e_num > max_n:
-                            max_n = e_num
-            
-            daily_list = []
-            if date_within_file != "":
-                for i in range(MAX_ERRORS):
-                    running_error_counts[i] += daily_error_counts[i] # accumulate totals for check later to catch any code errors
-                    daily_list.append(daily_error_counts[i])
-
-                if date_within_file in total_counts:
-                    # add data from this logstash box to date from other box(es)
-                    existing_list = total_counts[date_within_file]
+                            if line[0] == " " and line[1] == " ":
+                                if "error" not in line:
+                                    continue
+                            e_num = process_line(line)
+                            if e_num >= MAX_ERRORS:
+                                # we should not get here, but just in case
+                                r_die(3, "MAX_ERRORS more than: ", MAX_ERRORS, " so, increase it")
+                            daily_error_counts[e_num] += 1
+                            if found_date == False:
+                                res, date_within_file = add_date(line)
+                                if res == True:
+                                    found_date = True # we have found a date for this file
+                            if e_num > max_n:
+                                max_n = e_num
+                
+                daily_list = []
+                if date_within_file != "":
                     for i in range(MAX_ERRORS):
-                        daily_list[i] += existing_list[i]
+                        running_error_counts[i] += daily_error_counts[i] # accumulate totals for check later to catch any code errors
+                        daily_list.append(daily_error_counts[i])
 
-                total_counts[date_within_file] = daily_list
-            else:
-                r_info("No date found in file: ", file) # Hmm ?
+                    if date_within_file in total_counts:
+                        # add data from this logstash box to date from other box(es)
+                        existing_list = total_counts[date_within_file]
+                        for i in range(MAX_ERRORS):
+                            daily_list[i] += existing_list[i]
+
+                    total_counts[date_within_file] = daily_list
+                else:
+                    r_info("No date found in file: ", file) # Hmm ?
 
 
 # now add up the total_counts to check they match the running_error_counts

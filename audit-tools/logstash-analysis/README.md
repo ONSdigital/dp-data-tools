@@ -101,25 +101,7 @@ Date: 2023-06-05 Counts: [           2691         2       2   117               
 Date: 2023-06-06 Counts: [           2692         2   1   2   163                  1                      2                                                 2                                                                               ]
 Date: 2023-06-07 Counts: [            935         2   1   2    93                  1                      2                                                 2                                                                               ]
 
-4. When you want to look into all of the log files, you can run any of these:
-
-    uncompress-prod-to-three.sh
-    uncompress-sandbox-to-three.sh
-    uncompress-staging-to-three.sh
-
-  This will uncompress all of the log files per box into one file per logstash box into these files for respective environments:
-
-    prod-logs-1.txt
-    prod-logs-2.txt
-    prod-logs-3.txt
-
-    sandbox-logs-1.txt
-    sandbox-logs-2.txt
-    sandbox-logs-3.txt
-
-    staging-logs-1.txt
-    staging-logs-2.txt
-    staging-logs-3.txt
+4. When you want to look into all of the log files, you can look in the created sub-directory: 'full-logs'
 
 5. You should clean up the downloaded and created files once you are done.
    That is delete files in directories:
@@ -127,6 +109,7 @@ Date: 2023-06-07 Counts: [            935         2   1   2    93               
    prod
    sandbox
    staging
+   full-logs
   
 6. The output from running the analysis for the environments on the 29th June 2023
    have been saved into these files (for people to easily see what the output looks like,
