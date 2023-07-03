@@ -3,6 +3,10 @@
 Code in this repo (in the logs directory) is used to look at the errors in logstash logs
 and come up with counts of the different errors observed, and also counts of such errors per day.
 
+The target users of this app are people on the Platform or SRE team wishing to observe / investigate
+the distribution / existence of logs saved in the logstash servers to understand the impact of
+changing the configuration / setup of the logstash system.
+
 The reason for doing this is that as of 7th June 2023 there are far to many errors in the logs
 and we need a way of determining if any "fixes" are making a difference.
 
