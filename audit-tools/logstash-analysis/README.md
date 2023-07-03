@@ -19,6 +19,18 @@ running the analysis again ...
 We can look at the daily counts of the last 24 hours and compare to previous days/weeks/months to see
 if there is any improvement (reduction) in the numbers of errors seen.
 
+In order to run the script you may need to run either:
+
+```shell
+pip install python-dateutil
+```
+
+or:
+
+```shell
+pip3 install python-dateutil
+```
+
 -=-=-
 
 First select the environment from where you want to get the logs from.
@@ -74,7 +86,6 @@ running_error_counts: 11 is: 7
 .
 . and so on.
 
-
    Then ...
 
    Here's a small sample of what the output can look like (without colour highlighting)
@@ -87,11 +98,12 @@ running_error_counts: 11 is: 7
       Yellow indicating more than the previous day
       Green indicating less than the previous day
       White indicating no change in count
-   
+
    If there are no errors of a particular error type on a day, then no number '0' is displayed to aid clarity.
 
    (the below has no colour highlighting as its just plain text)
 
+```text
           Error numbers: [   0     1    2     3   4   5   6     7  8  9 10 11 12  13 14 15     16 17 18  19 20 21   22   23  24  25 26 27 28 29 30 31 32   33 34 35   36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56  57 58 ]
 Date: 2023-05-29 Counts: [           2693         8   3   8   122                  3                      8                                                 8                                                                               ]
 Date: 2023-05-30 Counts: [           2692         4   3   4   291                  3                      4                                                 4                                                                               ]
@@ -104,6 +116,7 @@ Date: 2023-06-04 Counts: [           2692         2       2   137               
 Date: 2023-06-05 Counts: [           2691         2       2   117                                         2                                                 2                                                                               ]
 Date: 2023-06-06 Counts: [           2692         2   1   2   163                  1                      2                                                 2                                                                               ]
 Date: 2023-06-07 Counts: [            935         2   1   2    93                  1                      2                                                 2                                                                               ]
+```
 
 4. When you want to look into all of the log files, you can look in the created sub-directory: 'full-logs'
 
