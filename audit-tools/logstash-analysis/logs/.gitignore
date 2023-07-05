@@ -1,0 +1,15 @@
+# Mac
+.DS_Store
+
+#VSCode
+.vscode
+
+logstash-1/
+logstash-2/
+logstash-3/
+
+prod/
+sandbox/
+staging/
+
+full-logs/
