@@ -8,8 +8,8 @@ require (
 	github.com/go-enry/go-enry/v2 v2.8.3
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f
-	golang.org/x/net v0.0.0-20210326060303-6b1517762897
-	golang.org/x/text v0.3.3
+	golang.org/x/net v0.7.0
+	golang.org/x/text v0.7.0
 )
 
 require (
@@ -28,6 +28,6 @@ require (
 	github.com/stretchr/testify v1.8.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
-	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

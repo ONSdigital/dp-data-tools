@@ -6,3 +6,7 @@ kafka-tools/.DS_Store
 .idea
 
 .DS_Store
+
+*.log.gz
+*plain.log
+full-logs/
