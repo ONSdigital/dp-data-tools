@@ -384,6 +384,12 @@ for dir in dir_list:
                             res, date_within_file = add_date(line)
                             if res == True:
                                 found_date = True # we have found a date for this file
+                        else:
+                            res2, date_within_file2 = add_date(line)
+                            if res2 == True:
+                                if date_within_file2 != date_within_file:
+                                    print("Found different dates in same log file !  first=", date_within_file, "second=", date_within_file2, "file:", file)
+                                    exit(1)
                         if e_num > max_n:
                             max_n = e_num
             
@@ -427,6 +433,12 @@ for dir in dir_list:
                             res, date_within_file = add_date(line)
                             if res == True:
                                 found_date = True # we have found a date for this file
+                        else:
+                            res2, date_within_file2 = add_date(line)
+                            if res2 == True:
+                                if date_within_file2 != date_within_file:
+                                    print("Found different dates in same log file !  first=", date_within_file, "second=", date_within_file2, "file:", file)
+                                    exit(1)
                         if e_num > max_n:
                             max_n = e_num
             
@@ -471,12 +483,12 @@ date_list.sort()
 
 def date_range_list(start_date, end_date):
     # Return list of datetime.date objects (inclusive) between start_date and end_date (inclusive).
-    date_list = []
+    local_date_list = []
     curr_date = start_date
     while curr_date <= end_date:
-        date_list.append(curr_date)
+        local_date_list.append(curr_date)
         curr_date += timedelta(days=1)
-    return date_list
+    return local_date_list
 
 start_date = date(year=int(date_list[0][0:4]), month=int(date_list[0][5:7]), day=int(date_list[0][8:10]))
 stop_date = date(year=int(date_list[-1][0:4]), month=int(date_list[-1][5:7]), day=int(date_list[-1][8:10]))
