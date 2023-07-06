@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import gzip
 from dateutil.parser import parse
-
+from datetime import date, timedelta
 
 MAX_ERRORS = 100
 
@@ -406,7 +406,9 @@ for dir in dir_list:
         if ".log.gz" in str(file):
             found_date = False
             date_within_file = ""
+            can_open_gz_file = False
             with gzip.open(file, 'rt') as f:
+                can_open_gz_file = True
                 for line in f:
                     if do_save:
                         result_file.write(line)
@@ -428,6 +430,8 @@ for dir in dir_list:
                         if e_num > max_n:
                             max_n = e_num
             
+            if can_open_gz_file == False:
+                r_die(4, "can't open .gz file:", file)
             daily_list = []
             if date_within_file != "":
                 for i in range(MAX_ERRORS):
@@ -465,8 +469,24 @@ for i in range(max_n+1):
 # Now that we have the files checked over and know the limits, we can report the results for plotting
 date_list.sort()
 
-print("number of dates: ", len(date_list))
+def date_range_list(start_date, end_date):
+    # Return list of datetime.date objects (inclusive) between start_date and end_date (inclusive).
+    date_list = []
+    curr_date = start_date
+    while curr_date <= end_date:
+        date_list.append(curr_date)
+        curr_date += timedelta(days=1)
+    return date_list
 
+start_date = date(year=int(date_list[0][0:4]), month=int(date_list[0][5:7]), day=int(date_list[0][8:10]))
+stop_date = date(year=int(date_list[-1][0:4]), month=int(date_list[-1][5:7]), day=int(date_list[-1][8:10]))
+all_date_list = date_range_list(start_date, stop_date)
+
+all_d = []
+
+# convert to strings to match original format for later checking
+for d in all_date_list:
+    all_d.append(d.strftime("%Y-%m-%d"))
 
 # determine max widths of printed numbers for each count - to print rows with same spacing
 max_total_counts_widths = [0] * MAX_ERRORS
@@ -500,28 +520,42 @@ r_trace(err_nums)
 
 previous_error_counts = [0] * MAX_ERRORS
 
+missing_days_total = 0
+
 # now print counts by column width in 'date' order
-for date in date_list:
+for date in all_d:
     d = parse(date).strftime("%a")
     if d == "Mon":
         r_trace(err_nums)   # show the row column header of the error numbers before every Monday
 
-    counts = total_counts[date]
-    day_counts = "Date: " + str(date) + " Counts: ["
-    for i in range(max_n+1):
-        s2 = str(counts[i])
-        l = len(s2)
-        while l < max_total_counts_widths[i]:
-            day_counts += " "
-            l += 1
-        if s2 == "0":
-            s2 = " "    # don't show zero's, so that actual numbers stand out
-        if counts[i] > previous_error_counts[i]:
-            s2 = f"{bcolors.WARNING}"+s2+f"{bcolors.ENDC}"  # Yellow count is going up
-        elif counts[i] < previous_error_counts[i]:
-            s2 = f"{bcolors.OKGREEN}"+s2+f"{bcolors.ENDC}"  # Green  count is going down
+    if date in date_list:
+        counts = total_counts[date]
+        day_counts = "Date: " + str(date) + " Counts: ["
+        for i in range(max_n+1):
+            s2 = str(counts[i])
+            l = len(s2)
+            while l < max_total_counts_widths[i]:
+                day_counts += " "
+                l += 1
+            if s2 == "0":
+                s2 = " "    # don't show zero's, so that actual numbers stand out
+            if counts[i] > previous_error_counts[i]:
+                s2 = f"{bcolors.WARNING}"+s2+f"{bcolors.ENDC}"  # Yellow count is going up
+            elif counts[i] < previous_error_counts[i]:
+                s2 = f"{bcolors.OKGREEN}"+s2+f"{bcolors.ENDC}"  # Green  count is going down
 
-        previous_error_counts[i] = counts[i]
-        day_counts += s2 + " "
-    day_counts += "]"
-    print(day_counts)
+            previous_error_counts[i] = counts[i]
+            day_counts += s2 + " "
+        day_counts += "]"
+        print(day_counts)
+    else:
+        missing_day = "Date: " + str(date) + f"{bcolors.WARNING}" + " Missing"+f"{bcolors.ENDC}"
+        print(missing_day)
+        missing_days_total += 1
+
+print("\nOut of a total span of:", len(all_d), "days there are:")
+
+if missing_days_total == 0:
+    print("\n    No missing days.\n")
+else:
+    print("\n    ", missing_days_total, "days missing.\n")
