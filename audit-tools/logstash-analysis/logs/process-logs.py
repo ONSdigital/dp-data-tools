@@ -584,6 +584,63 @@ def process_line(line):
         # this copes with all variants of:
         # [DEBUG][org.apache.http.wire     ] http-outgoing-3 >> "{"syslog_facility":"user-level","input":{"type":"log"},"syslog_severity_code":5,"syslog_timestamp":"Jul  7 14:50:55","syslog_program":"consul","syslog_severity":"notice","@version":"1","syslog_pid":"938023","tags":["beats_input_codec_plain_applied"],"syslog_hostname":"ip-10-30-142-190","received_at":"2023-07-07T14:50:59.044Z","agent":{"ephemeral_id":"03715cb6-7b08-465f-a290-6519f3108c43","name":"ip-10-30-142-190","id":"c81ff488-13bd-4915-83df-f9dd60fa5444","type":"filebeat","version":"7.11.2","hostname":"ip-10-30-142-190"},"ecs":{"version":"1.6.0"},"fields":{"type":"system"},"syslog_facility_code":1,"received_from":"{\"name\":\"ip-10-30-142-190\"}","@timestamp":"2023-07-07T14:50:55.000Z","log":{"offset":2500819,"file":{"path":"/var/log/syslog"}},"message":"    2023-07-07T14:50:55.179Z [INFO]  connect.ca.vault: Successfully renewed token for Vault provider"}[\n]"
         return 170
+    if '[INFO ][logstash.runner          ] Log4j configuration path used is: /etc/logstash/log4j2.properties' in line:
+        # this copes with all variants of:
+        # WARN  Unknown error line: [2023-07-26T12:01:18,517][INFO ][logstash.runner          ] Log4j configuration path used is: /etc/logstash/log4j2.properties
+        return 171
+    if '[INFO ][logstash.runner          ] Starting Logstash {"logstash.version"=>"7.12.1"' in line:
+        # this copes with all variants of:
+        # [INFO ][logstash.runner          ] Starting Logstash {"logstash.version"=>"7.12.1"
+        return 172
+    if '[ERROR][logstash.agent           ] Internal API server error {:status=>500, :request_method=>"GET"' in line:
+        # this copes with all variants of:
+        # [ERROR][logstash.agent           ] Internal API server error {:status=>500, :request_method=>"GET"
+        return 173
+    if '[ERROR][logstash.agent           ] API HTTP Request {:status=>500, :request_method=>"GET", :path_info=>"/_node", :query_string=>"", :http_version=>"HTTP/1.1", :http_accept=>nil}' in line:
+        # [ERROR][logstash.agent           ] API HTTP Request {:status=>500, :request_method=>"GET", :path_info=>"/_node", :query_string=>"", :http_version=>"HTTP/1.1", :http_accept=>nil}
+        return 174
+    if '[ERROR][logstash.agent           ] API HTTP Request {:status=>500, :request_method=>"GET", :path_info=>"/_node/stats", :query_string=>"", :http_version=>"HTTP/1.1", :http_accept=>nil}' in line:
+        # [ERROR][logstash.agent           ] API HTTP Request {:status=>500, :request_method=>"GET", :path_info=>"/_node/stats", :query_string=>"", :http_version=>"HTTP/1.1", :http_accept=>nil}
+        return 174
+    if 'Relying on default value of `pipeline.ecs_compatibility`, which may change in a future major release of Logstash. To avoid unexpected changes when upgrading Logstash, please explicitly declare your desired ECS Compatibility mode.' in line:
+        # this copes with all variants of:
+        # Relying on default value of `pipeline.ecs_compatibility`, which may change in a future major release of Logstash. To avoid unexpected changes when upgrading Logstash, please explicitly declare your desired ECS Compatibility mode.
+        return 175
+    if '[WARN ][logstash.runner          ] SIGTERM received. Shutting down.' in line:
+        # [WARN ][logstash.runner          ] SIGTERM received. Shutting down.
+        return 176
+    if '[INFO ][logstash.runner          ] Starting Logstash {"logstash.version"=>"7.17.12"' in line:
+        # this copes with all variants of:
+        # [INFO ][logstash.runner          ] Starting Logstash {"logstash.version"=>"7.17.12", "jruby.version"=>"jruby 9.2.20.1 (2.5.8) 2021-11-30 2a2962fbd1 OpenJDK 64-Bit Server VM 11.0.19+7 on 11.0.19+7 +indy +jit [linux-x86_64]"}
+        return 177
+    if '[INFO ][logstash.runner          ] JVM bootstrap flags:' in line:
+        # this copes with all variants of:
+        # [INFO ][logstash.runner          ] JVM bootstrap flags: [-Xms1g, -Xmx1g, -XX:+UseConcMarkSweepGC, -XX:CMSInitiatingOccupancyFraction=75, -XX:+UseCMSInitiatingOccupancyOnly, -Djava.awt.headless=true, -Dfile.encoding=UTF-8, -Djdk.io.File.enableADS=true, -Djruby.compile.invokedynamic=true, -Djruby.jit.threshold=0, -Djruby.regexp.interruptible=true, -XX:+HeapDumpOnOutOfMemoryError, -Djava.security.egd=file:/dev/urandom, -Dlog4j2.isThreadContextMapInheritable=true]
+        return 178
+    if "[INFO ][logstash.agent           ] Successfully started Logstash API endpoint {:port=>9600, :ssl_enabled=>false}" in line:
+        # [INFO ][logstash.agent           ] Successfully started Logstash API endpoint {:port=>9600, :ssl_enabled=>false}
+        return 179
+    if '[ERROR][logstash.plugins.registry] Unable to load plugin. {:type=>"output", :name=>"amazon_es"}' in line:
+        # [ERROR][logstash.plugins.registry] Unable to load plugin. {:type=>"output", :name=>"amazon_es"}
+        return 180
+    if '[ERROR][logstash.agent           ] Failed to execute action {:action=>LogStash::PipelineAction::Create/pipeline_id:' in line:
+        # this copes with all variants of:
+        # [ERROR][logstash.agent           ] Failed to execute action {:action=>LogStash::PipelineAction::Create/pipeline_id:main, :exception=>"Java::JavaLang::IllegalStateException", :message=>"Unable to configure plugins: (PluginLoadingError) Couldn't find any output plugin named 'amazon_es'. Are you sure this is correct? Trying to load the amazon_es output plugin resulted in this error: Unable to load the requested plugin named amazon_es of type output. The plugin is not installed.", :backtrace=>["org.logstash.config.ir.CompiledPipeline.<init>(CompiledPipeline.java:120)", "org.logstash.execution.JavaBasePipelineExt.initialize(JavaBasePipelineExt.java:86)", "org.logstash.execution.JavaBasePipelineExt$INVOKER$i$1$0$initialize.call(JavaBasePipelineExt$INVOKER$i$1$0$initialize.gen)", "org.jruby.internal.runtime.methods.JavaMethod$JavaMethodN.call(JavaMethod.java:837)", "org.jruby.ir.runtime.IRRuntimeHelpers.instanceSuper(IRRuntimeHelpers.java:1169)", "org.jruby.ir.runtime.IRRuntimeHelpers.instanceSuperSplatArgs(IRRuntimeHelpers.java:1156)", "org.jruby.ir.targets.InstanceSuperInvokeSite.invoke(InstanceSuperInvokeSite.java:39)", "usr.share.logstash.logstash_minus_core.lib.logstash.java_pipeline.RUBY$method$initialize$0(/usr/share/logstash/logstash-core/lib/logstash/java_pipeline.rb:48)", "org.jruby.internal.runtime.methods.CompiledIRMethod.call(CompiledIRMethod.java:80)", "org.jruby.internal.runtime.methods.MixedModeIRMethod.call(MixedModeIRMethod.java:70)", "org.jruby.runtime.callsite.CachingCallSite.cacheAndCall(CachingCallSite.java:333)", "org.jruby.runtime.callsite.CachingCallSite.call(CachingCallSite.java:87)", "org.jruby.RubyClass.newInstance(RubyClass.java:939)", "org.jruby.RubyClass$INVOKER$i$newInstance.call(RubyClass$INVOKER$i$newInstance.gen)", "org.jruby.ir.targets.InvokeSite.invoke(InvokeSite.java:207)", "usr.share.logstash.logstash_minus_core.lib.logstash.pipeline_action.create.RUBY$method$execute$0(/usr/share/logstash/logstash-core/lib/logstash/pipeline_action/create.rb:52)", "usr.share.logstash.logstash_minus_core.lib.logstash.pipeline_action.create.RUBY$method$execute$0$__VARARGS__(/usr/share/logstash/logstash-core/lib/logstash/pipeline_action/create.rb:50)", "org.jruby.internal.runtime.methods.CompiledIRMethod.call(CompiledIRMethod.java:80)", "org.jruby.internal.runtime.methods.MixedModeIRMethod.call(MixedModeIRMethod.java:70)", "org.jruby.ir.targets.InvokeSite.invoke(InvokeSite.java:207)", "usr.share.logstash.logstash_minus_core.lib.logstash.agent.RUBY$block$converge_state$2(/usr/share/logstash/logstash-core/lib/logstash/agent.rb:392)", "org.jruby.runtime.CompiledIRBlockBody.callDirect(CompiledIRBlockBody.java:138)", "org.jruby.runtime.IRBlockBody.call(IRBlockBody.java:58)", "org.jruby.runtime.IRBlockBody.call(IRBlockBody.java:52)", "org.jruby.runtime.Block.call(Block.java:139)", "org.jruby.RubyProc.call(RubyProc.java:318)", "org.jruby.internal.runtime.RubyRunnable.run(RubyRunnable.java:105)", "java.base/java.lang.Thread.run(Thread.java:829)"]}
+        return 181
+    if '[ERROR][logstash.agent           ] An exception happened when converging configuration {:exception=>LogStash::Error, :message=>"Don' in line:
+        # this copes with all variants of:
+        # [ERROR][logstash.agent           ] An exception happened when converging configuration {:exception=>LogStash::Error, :message=>"Don't know how to handle `Java::JavaLang::IllegalStateException` for `PipelineAction::Create<main>`"}
+        return 182
+    if '[FATAL][logstash.runner          ] An unexpected error occurred! {:error=>#<LogStash::Error: Don' in line:
+        # this copes with all variants of:
+        # [FATAL][logstash.runner          ] An unexpected error occurred! {:error=>#<LogStash::Error: Don't know how to handle `Java::JavaLang::IllegalStateException` for `PipelineAction::Create<main>`>, :backtrace=>["org/logstash/execution/ConvergeResultExt.java:135:in `create'", "org/logstash/execution/ConvergeResultExt.java:60:in `add'", "/usr/share/logstash/logstash-core/lib/logstash/agent.rb:405:in `block in converge_state'"]}
+        return 183
+    if '[FATAL][org.logstash.Logstash    ] Logstash stopped processing because of an error: (SystemExit) exit' in line:
+        # [FATAL][org.logstash.Logstash    ] Logstash stopped processing because of an error: (SystemExit) exit
+        return 184
+    if '[WARN ][org.logstash.common.io.DeadLetterQueueWriter] Event previously submitted to dead letter queue. Skipping...' in line:
+        # [WARN ][org.logstash.common.io.DeadLetterQueueWriter] Event previously submitted to dead letter queue. Skipping...
+        return 185
 
     # Do something with 'line'
     warn = "Unknown error line: " + line
