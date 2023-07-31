@@ -54,6 +54,8 @@ def process_line(line):
     
     # now process 'WARN':
     if '[WARN ][logstash.inputs.s3       ] Unable to download remote file {:exception=>Aws::S3::Errors::NoSuchKey, :message=>"The specified key does not exist."' in line:
+        # for example:
+        # Unable to download remote file {:exception=>Aws::S3::Errors::NoSuchKey, :message=>"The specified key does not exist.", :remote_key=>"AWSLogs/337289154253/elasticloadbalancing/eu-west-2/2023/07/26/337289154253_elasticloadbalancing_eu-west-2_app.predissemination-sandbox.33e29f9618383559_20230726T1215Z_10.30.142.230_1qza4pxa.log.gz"}
         return 16
     if '[WARN ][logstash.filters.json    ] Exception caught in json filter {:exception=>"Invalid FieldReference:' in line:
         return 17
