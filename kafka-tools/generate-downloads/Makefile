@@ -22,7 +22,17 @@ BUILD_ARCH=$(BUILD)/$(GOOS)-$(GOARCH)
 BUILD_SCRIPT=$(BUILD_ARCH)/$(APP).sh
 
 DP_CONFIGS?=../../../dp-configs
-SECRETS_APP?=dp-dataset-api-publishing
+
+SERVICE?=cantabular
+
+ifeq ($(SERVICE), cantabular)
+	SECRETS_APP?=dp-cantabular-filter-flex-api-publishing
+	KAFKA_PRODUCER_TOPIC?=cantabular-export-start
+else
+	SECRETS_APP?=dp-dataset-api-publishing
+	KAFKA_PRODUCER_TOPIC?=filter-job-submitted
+endif
+
 SECRETS_JSON=$(DP_CONFIGS)/secrets/$(ENV)/$(SECRETS_APP).json
 
 .PHONY: all
@@ -54,6 +64,7 @@ env-vars:
 	@set -o pipefail; jq -r ' . as $$o |  keys | .[] | "export " + . + "=" + ($$o[.] | tojson)' $(SECRETS_JSON) | sed 's/\\n/\n/g'
 	@echo export INSTANCE_ID="$(INSTANCE_ID)" DATASET_ID="$(DATASET_ID)"
 	@echo export VERSION=$(VERSION) EDITION="$(EDITION)" TIMEOUT=$(TIMEOUT)
+	@echo export KAFA_PRODUCER_TOPIC="$(KAFKA_PRODUCER_TOPIC)" SERVICE="$(SERVICE)"
 
 .PHONY: deploy
 deploy: build script

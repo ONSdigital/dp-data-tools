@@ -6,13 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
-
-	"github.com/ONSdigital/dp-dataset-api/download"
-	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
-	"github.com/ONSdigital/dp-dataset-api/schema"
-	kafka "github.com/ONSdigital/dp-kafka/v2"
+	cantabularEvent "github.com/ONSdigital/dp-cantabular-filter-flex-api/event"
+	cantabularEventSchema "github.com/ONSdigital/dp-cantabular-filter-flex-api/schema"
+	cmdEvent "github.com/ONSdigital/dp-dataset-api/download"
+	cmdEventSchema "github.com/ONSdigital/dp-dataset-api/schema"
+	kafka "github.com/ONSdigital/dp-kafka/v3"
+	"github.com/ONSdigital/dp-kafka/v3/avro"
 	"github.com/ONSdigital/log.go/v2/log"
+	"github.com/kelseyhightower/envconfig"
 )
 
 const KafkaTLSProtocolFlag = "TLS"
@@ -23,41 +24,46 @@ type Config struct {
 	Edition     string        `envconfig:"EDITION"`
 	Version     string        `envconfig:"VERSION"`
 	Timeout     time.Duration `envconfig:"TIMEOUT"`
+	Service     string        `envconfig:"SERVICE"`
 	KafkaConfig KafkaConfig
 }
 
 type KafkaConfig struct {
-	Brokers                []string `envconfig:"KAFKA_ADDR"`
-	Version                string   `envconfig:"KAFKA_VERSION"`
-	MaxBytes               int      `envconfig:"KAFKA_MAX_BYTES"`
-	SecProtocol            string   `envconfig:"KAFKA_SEC_PROTO"`
-	SecClientKey           string   `envconfig:"KAFKA_SEC_CLIENT_KEY"        json:"-"`
-	SecClientCert          string   `envconfig:"KAFKA_SEC_CLIENT_CERT"`
-	SecCACerts             string   `envconfig:"KAFKA_SEC_CA_CERTS"`
-	SecSkipVerify          bool     `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
-	GenerateDownloadsTopic string   `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
+	Brokers                   []string `envconfig:"KAFKA_ADDR"`
+	Version                   string   `envconfig:"KAFKA_VERSION"`
+	MaxBytes                  int      `envconfig:"KAFKA_MAX_BYTES"`
+	ProducerMinBrokersHealthy int      `envconfig:"KAFKA_PRODUCER_MIN_BROKERS_HEALTHY"`
+	SecClientKey              string   `envconfig:"KAFKA_SEC_CLIENT_KEY"        json:"-"`
+	SecClientCert             string   `envconfig:"KAFKA_SEC_CLIENT_CERT"`
+	SecCACerts                string   `envconfig:"KAFKA_SEC_CA_CERTS"`
+	SecSkipVerify             bool     `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
+	Topic                     string   `envconfig:"KAFA_PRODUCER_TOPIC"`
+	SecProtocol               string   `envconfig:"KAFKA_SEC_PROTO"`
 }
 
 var defaultCfg = Config{
 	KafkaConfig: KafkaConfig{
-		Brokers:                []string{"kafka-1:9092", "kafka-2:9092", "kafka-3:9092"},
-		Version:                "1.0.2",
-		GenerateDownloadsTopic: "filter-job-submitted",
+		Brokers:                   []string{"kafka-1:9092", "kafka-2:9092", "kafka-3:9092"},
+		Version:                   "1.0.2",
+		Topic:                     "cantabular-export-start",
+		ProducerMinBrokersHealthy: 2,
 	},
 	Timeout: 30 * time.Second,
-	Edition: "time-series",
+	Edition: "2021",
+	Service: "cantabular",
 }
 
 func main() {
 	cfg := getConfig()
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
+	ctx := context.Background()
 	log.Info(ctx, "Config", log.Data{"config": cfg})
 
-	pChannels := kafka.CreateProducerChannels()
-
 	pConfig := &kafka.ProducerConfig{
-		KafkaVersion:    &cfg.KafkaConfig.Version,
-		MaxMessageBytes: &cfg.KafkaConfig.MaxBytes,
+		KafkaVersion:      &cfg.KafkaConfig.Version,
+		MaxMessageBytes:   &cfg.KafkaConfig.MaxBytes,
+		BrokerAddrs:       cfg.KafkaConfig.Brokers,
+		Topic:             cfg.KafkaConfig.Topic,
+		MinBrokersHealthy: &cfg.KafkaConfig.ProducerMinBrokersHealthy,
 	}
 
 	if cfg.KafkaConfig.SecProtocol == KafkaTLSProtocolFlag {
@@ -70,77 +76,28 @@ func main() {
 		)
 	}
 
-	// kafka may block, so do work in goroutine (cancel context when done)
-	go func() {
-		defer cancel()
-
-		prod, err := kafka.NewProducer(ctx, cfg.KafkaConfig.Brokers, cfg.KafkaConfig.GenerateDownloadsTopic, pChannels, pConfig)
-		if err != nil {
-			log.Error(ctx, "NewProducer failed", err)
-			return
-		}
-		defer func() {
-			log.Info(ctx, "closing producer...")
-			if err := prod.Close(ctx); err != nil {
-				log.Error(ctx, "close failed", err)
-			}
-			log.Info(ctx, "producer closed")
-		}()
-		downloadGenerator := &download.CMDGenerator{
-			Producer:   adapter.NewProducerAdapter(prod),
-			Marshaller: schema.GenerateCMDDownloadsEvent,
-		}
-
-		log.Info(ctx, "waiting for kafka initialisation...")
-		select {
-		case <-ctx.Done():
-			return
-		case <-pChannels.Ready:
-		}
-		log.Info(ctx, "kafka initialised")
-
-		tmr := time.NewTimer(4 * time.Second) // settle time seems necessary
-		select {
-		case <-ctx.Done():
-			tmr.Stop()
-			return
-		case <-tmr.C:
-		}
-
-		log.Info(ctx, "message send...")
-		if err = downloadGenerator.Generate(ctx, cfg.DatasetID, cfg.InstanceID, cfg.Edition, cfg.Version); err != nil {
-			log.Error(ctx, "Generate failed", err)
-			return
-		}
-
-		log.Info(ctx, "message sent, pausing...")
-		tmr2 := time.NewTimer(3 * time.Second) // pause before closing, necessary to allow message to depart
-		select {
-		case <-ctx.Done():
-			tmr2.Stop()
-			return
-		case <-tmr2.C:
-		}
-	}()
-
-	// wait for kafka work to complete (or timeout, or error)
-	select {
-	case err := <-pChannels.Errors:
-		if err != nil {
-			log.Error(ctx, "producer error", err)
-		} else {
-			log.Info(ctx, "Errors chan closed")
-		}
-		cancel()
-	case <-ctx.Done():
-		log.Info(ctx, "context has gone")
-		if err := ctx.Err(); err != nil && err != context.Canceled {
-			panic(err)
-		}
+	producer, err := kafka.NewProducer(ctx, pConfig)
+	if err != nil {
+		log.Error(ctx, "NewProducer failed", err)
+		return
 	}
-	log.Info(ctx, "2s pause...")
-	time.Sleep(2 * time.Second)
-	log.Info(ctx, "done")
+
+	producer.LogErrors(ctx)
+
+	log.Info(ctx, "message send...")
+
+	event, schema := getEventAndSchema(*cfg)
+
+	if err := producer.Send(schema, event); err != nil {
+		log.Error(ctx, "error sending 'export_start' event", err)
+		return
+	}
+
+	log.Info(ctx, "closing producer...")
+	if err := producer.Close(ctx); err != nil {
+		log.Error(ctx, "close failed", err)
+	}
+	log.Info(ctx, "producer closed")
 }
 
 func getConfig() (cfg *Config) {
@@ -162,6 +119,9 @@ func getConfig() (cfg *Config) {
 	if cfg.Version == "" {
 		panic("no version")
 	}
+	if cfg.Service == "" {
+		panic("no service")
+	}
 	if cfg.KafkaConfig.SecProtocol != "" {
 		if cfg.KafkaConfig.SecProtocol != KafkaTLSProtocolFlag {
 			panic("bad kafka sec proto - expected: " + KafkaTLSProtocolFlag)
@@ -175,4 +135,32 @@ func getConfig() (cfg *Config) {
 func (config Config) String() string {
 	jsonStr, _ := json.Marshal(config)
 	return string(jsonStr)
+}
+
+func getEventAndSchema(config Config) (interface{}, *avro.Schema) {
+	if config.Service == "cantabular" {
+		return getCantabularEventAndSchema(config)
+	} else {
+		return getCMDEventAndSchema(config)
+	}
+}
+
+func getCantabularEventAndSchema(config Config) (interface{}, *avro.Schema) {
+	e := cantabularEvent.ExportStart{
+		InstanceID: config.InstanceID,
+		DatasetID:  config.DatasetID,
+		Edition:    config.Edition,
+		Version:    config.Version,
+	}
+	return e, cantabularEventSchema.ExportStart
+}
+
+func getCMDEventAndSchema(config Config) (interface{}, *avro.Schema) {
+	e := cmdEvent.GenerateDownloads{
+		InstanceID: config.InstanceID,
+		DatasetID:  config.DatasetID,
+		Edition:    config.Edition,
+		Version:    config.Version,
+	}
+	return e, cmdEventSchema.GenerateCMDDownloadsEvent
 }

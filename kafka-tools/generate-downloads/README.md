@@ -15,13 +15,15 @@ Queue the message _inside the environment_ (or - deprecated - _locally_ using an
 Run the following on your laptop, from this directory, to upload and run the program inside the environment (change the values to suit):
 
 ```shell
-$ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authority" VERSION=2 EDITION=2021 ENV=prod
+$ make INSTANCE_ID="xb1ae3d1-913e-43e0-b4c9-2c741744f12" DATASET_ID="weekly-deaths-local-authority" VERSION=2 EDITION=2021 ENV=prod SERVICE=cmd
 # ...
 ```
 
 The `INSTANCE_ID`, `DATASET_ID`, `EDITION` and `VERSION` used below should be provided by the publishing team who raised the problem.
+
 - `DATASET_ID`, `EDITION` and `VERSION` can be taken from the URI of the dataset: `https://www.ons.gov.uk/datasets/{DATASET_ID}/editions/{EDITION}/versions/{VERSION}`
 - If `INSTANCE_ID` is not provided, see section below [Getting the INSTANCE_ID, a worked example](#getting-the-instance_id-a-worked-example)
+- `SERVICE` can either be 'cmd' or 'cantabular', depending what event you are re-triggering
 
 The above `make` does the following:
 
@@ -30,7 +32,7 @@ The above `make` does the following:
 - `dp scp` the assets onto the env
 - `dp ssh` onto the env to run the assets
 - cleans up (the env) on success
-  - if it fails, you should tidy up with: `make clean ENV=...` :warning:
+- if it fails, you should tidy up with: `make clean ENV=...` :warning:
 
 ### Run locally
 
