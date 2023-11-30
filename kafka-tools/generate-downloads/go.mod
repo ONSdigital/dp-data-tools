@@ -1,6 +1,6 @@
 module github.com/ONSdigital/dp-data-tools/kafka-tools/generate-downloads
 
-go 1.20
+go 1.21
 
 require (
 	github.com/ONSdigital/dp-cantabular-filter-flex-api v1.25.0
