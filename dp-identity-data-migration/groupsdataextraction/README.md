@@ -34,7 +34,7 @@ Two terminal windows are required  one for the tunnel, another to run extracts.
 2. In the other Terminal Widow set the Environment Variables :-
 
     ```shell
-    export environment=<'localhost' 'develop' 'prod' 'production' 'sandbox'>
+    export environment=<'localhost' 'sandbox' 'staging' 'prod'>
     if environment = localhost 
         export zebedee_host="http://localhost:8082"
         export email_domains="gmail.com,ons.gov.uk,ext.ons.gov.uk,methods.co.uk"
@@ -46,8 +46,8 @@ Two terminal windows are required  one for the tunnel, another to run extracts.
     export zebedee_pword=<zebedee user admin password for environment>
     export groups_filename="groups_export_$(date '+%Y-%m-%d_%H_%M_%S').csv"
     export groupusers_filename="groupusers_export_$(date '+%Y-%m-%d_%H_%M_%S').csv"
-    export validusers_filename=<valid_users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
-    export invalidusers_filename=<invalid_users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv>
+    export validusers_filename="valid_users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv"
+    export invalidusers_filename="invalid_users_export_$(date '+%Y-%m-%d_%H_%M_%S').csv"
     export s3_bucket=<s3_bucket>
     export s3_region="eu-west-2"
     export aws_profile=<profile name for environment>
@@ -56,7 +56,7 @@ Two terminal windows are required  one for the tunnel, another to run extracts.
 3. Run the code
 
    ```shell
-   go run dp-identity-data-migration/groupsdataextraction/group_extraction.go
+   go run group_extraction.go
    ```
 
 ### Output
