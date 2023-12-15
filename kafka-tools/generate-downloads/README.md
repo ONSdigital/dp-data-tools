@@ -61,7 +61,7 @@ You can now use Mongo or curl to obtain the ID.
 You can access mongodb using either
 
 - your local client
-  - see [accessing mongodb using robo3t](https://github.com/ONSdigital/dp-operations/blob/main/guides/mongodb.md)
+  - see [accessing documentdb using robo3t](https://github.com/ONSdigital/dp-operations/blob/main/guides/documentdb.md)
   - select the `datasets` database
   - then [query mongodb](#query-mongodb), below
 - or login to a host in the env and run the `mongo` client
