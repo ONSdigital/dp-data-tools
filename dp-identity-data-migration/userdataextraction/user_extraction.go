@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/csv"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/ONSdigital/dp-zebedee-sdk-go/zebedee"
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,6 +33,7 @@ type config struct {
 	user string
 	emailDomains       []string
 	s3Bucket, s3Region string
+	debug              bool
 }
 
 type cognitoUser struct {
@@ -118,6 +121,12 @@ func readConfig() *config {
 		case "s3_region":
 			missingVariables("s3_region", pair[1])
 			conf.s3Region = pair[1]
+		case "debug":
+			debug, err := strconv.ParseBool(pair[1])
+			if err != nil {
+				log.Printf("non boolean debug value set: %v\n", err)
+			}
+			conf.debug = debug
 		}
 	}
 
@@ -358,5 +367,8 @@ func main() {
 	elapsed := time.Since(start)
 	log.Printf("Elapse time %s\n", elapsed)
 	uploadFile(logFileName, conf.s3Bucket, logFileName, conf.s3Region, conf.awsProfile)
-	deleteFile(logFileName)
+
+	if !conf.debug {
+		deleteFile(logFileName)
+	}
 }
