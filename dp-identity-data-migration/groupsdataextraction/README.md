@@ -46,7 +46,7 @@ Two terminal windows are required  one for the tunnel, another to run extracts.
 
     export zebedee_user=<zebedee user admin email>
     export zebedee_pword=<zebedee user admin password for environment>
-    extract_date=$(date '+%Y-%m-%d_%H_%M_%S').csv
+    extract_date=$(date '+%Y-%m-%d_%H_%M_%S')
     export groups_filename="groups_export_$extract_date.csv"
     export groupusers_filename="groupusers_export_$extract_date.csv"
     export validusers_filename="valid_users_export_$extract_date.csv"
