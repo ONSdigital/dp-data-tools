@@ -33,6 +33,8 @@ Two terminal windows are required  one for the tunnel, another to run extracts.
 
 2. In the other Terminal Widow set the Environment Variables :-
 
+    N.B. the `validusers_filename` should be pointing at your local copy of the file generated during the userdataextraction.
+
     ```shell
     export environment=<'localhost' 'sandbox' 'staging' 'prod'>
     if environment = localhost 
