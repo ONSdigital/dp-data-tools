@@ -14,9 +14,9 @@ After the search is complete, the script will display the count for each the fou
 
 ## Prerequisites
 
-- a functioning dp tool from dp-cli
-    - dp scp will be used to put the consumer binary into the env
-    - then dp ssh to run it in the env
+- a functioning `dp` tool from `dp-cli`
+    - `dp scp` will be used to put the consumer binary into the env
+    - then `dp ssh` to run it in the env
 
 To build the tool in a remote environment, you will need to run the following `make` command, where env is either `sandbox`, `staging` or `prod` :
 
@@ -30,7 +30,7 @@ You will then need to ssh into the desired env (`sandbox` etc.), subnet (`web` o
 
 For example -
 
-```
+```shell
 dp ssh sandbox publishing 1 
 ```
 
@@ -78,7 +78,7 @@ For example, to run the script without any optional flags, use one of the follow
 
 To run the script with the optional flags, use the following command. Either of the flags can be removed as required. For example, - 
 
-```
+```shell
 ./find_content_items -directory=/var/babbage/site -filter=bulletin -latestrelease=true
 ```
 
