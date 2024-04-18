@@ -19,3 +19,4 @@ deploy: build
 			dp scp $(ENV) $$SUBNET $$HOST_NUM $(BIN_NAME) . ; \
 		done; \
 	done
+	
