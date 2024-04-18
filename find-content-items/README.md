@@ -21,7 +21,7 @@ After the search is complete, the script will display the count for each the fou
 To build the tool in a remote environment, you will need to run the following `make` command, where env is either `sandbox`, `staging` or `prod` :
 
     ```shell
-    make deploy <env>
+    make deploy ENV=<env>
     ```
 
 The above command will create the binary in the root of `publishing_mount 1`, `publishing_mount 2`, `web_mount 1` and `web_mount 2` in the selected env.
@@ -38,35 +38,47 @@ dp ssh sandbox publishing 1
 
 ## How to run the script
 
-Depending on which subnet you are in (i.e. `web` or `publishing`) you will need to run the tool in the specific directory where the content data is stored.
+Depending on which subnet you are in (i.e. `web` or `publishing`) you will need to specify the directory where the content data is stored.
 
 For `publishing` - 
 
 ```
-cd /var/florence/zebedee/master
+/var/florence/zebedee/master
 ```
 
 For `web` - 
 
 ```
-cd /var/babbage/site
+/var/babbage/site
 ```
 
 ### Command-line Flags
 
-As specified above, you have the option to include flags which will filter the data returned by the script.
+Once you have established the correct directory from the above, you will need to add this directory via a command line flag (`-directory`).
 
-- `filter`: Specify the type to filter the search results. If you're interested in a specific type of content item, you can use this flag to narrow down the results.
-- `latestrelease`: Include only the latest release of each content item. Use this flag when you're interested only in the most recent data.
+You also have the option to include flags which will filter the data returned by the script.
 
-To run the script without any flags, use the following command -
+- `-filter`: Specify the type to filter the search results. If you're interested in a specific type of content item, you can use this flag to narrow down the results.
+- `-latestrelease`: Include only the latest release of each content item. Use this flag when you're interested only in the most recent data.
 
+For example, to run the script without any optional flags, use one of the following commands -
+
+`web`
+
+
+```shell
+./find_content_items -directory=/var/babbage/site
 ```
 
+`publishing`
+
+```shell
+./find_content_items -directory=/var/florence/zebedee/master
 ```
-To run the script with the flags, use the following command. Either of the flags can be removed as required - 
+
+To run the script with the optional flags, use the following command. Either of the flags can be removed as required. For example, - 
 
 ```
--filter=bulletin -latestrelease=true
+./find_content_items -directory=/var/babbage/site -filter=bulletin -latestrelease=true
 ```
 

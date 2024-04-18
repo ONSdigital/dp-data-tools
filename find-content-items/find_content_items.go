@@ -17,15 +17,16 @@ type Data struct {
 func main() {
 	var (
 		filterType        string
+		dir               string
 		latestReleaseOnly bool
 	)
 	flag.StringVar(&filterType, "filter", "", "type to filter counts")
+	flag.StringVar(&dir, "directory", "", "directory to operate in")
 	flag.BoolVar(&latestReleaseOnly, "latestrelease", false, "filter by latest release only")
 	flag.Parse()
 
-	directory, err := os.Getwd()
-	if err != nil {
-		fmt.Println("error getting current working directory:", err)
+	if dir == "" {
+		fmt.Println("no directory specified")
 		os.Exit(1)
 	}
 
@@ -34,13 +35,13 @@ func main() {
 
 	counts := make(map[string]int)
 
-	count, elapsed, err := findFiles(directory, counts, filterType, latestReleaseOnly)
+	count, elapsed, err := findFiles(dir, counts, filterType, latestReleaseOnly)
 	if err != nil {
-		fmt.Printf("error while searching in %s: %v\n", directory, err)
+		fmt.Printf("error while searching in %s: %v\n", dir, err)
 	}
 	totalFiles += count
 	totalTime += elapsed
-	fmt.Printf("Found %d files in %s\n", count, directory)
+	fmt.Printf("Found %d files in %s\n", count, dir)
 
 	fmt.Printf("Total time taken: %v\n", totalTime)
 	fmt.Printf("Total files found: %d\n", totalFiles)
@@ -52,11 +53,11 @@ func main() {
 	}
 }
 
-func findFiles(root string, counts map[string]int, filterType string, latestReleaseOnly bool) (int, time.Duration, error) {
+func findFiles(directory string, counts map[string]int, filterType string, latestReleaseOnly bool) (int, time.Duration, error) {
 	var count int
 	start := time.Now()
 
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

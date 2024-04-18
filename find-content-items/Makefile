@@ -1,4 +1,4 @@
-BIN_NAME := find_content_items.go
+BIN_NAME := find_content_items
 ENV ?= sandbox 
 
 .PHONY: all
@@ -6,10 +6,10 @@ all: build
 
 .PHONY: build
 build:
-	go build -o $(BIN_NAME) 'github.com/ONSdigital/dp-data-tools/find-content-items'
+	GOOS=linux GOARCH=amd64 go build -o $(BIN_NAME) 'github.com/ONSdigital/dp-data-tools/find-content-items'
 
 .PHONY: deploy
-deploy:
+deploy: build
 	@echo "Deploying to $(ENV)"
 	@for SUBNET in web publishing; do \
 		for HOST_NUM in 1 2; do \
