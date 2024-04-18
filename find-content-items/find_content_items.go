@@ -41,10 +41,10 @@ func main() {
 	}
 	totalFiles += count
 	totalTime += elapsed
-	fmt.Printf("Found %d files in %s\n", count, dir)
+	fmt.Printf("Found %d files in %s\n\n", count, dir)
 
-	fmt.Printf("Total time taken: %v\n", totalTime)
-	fmt.Printf("Total files found: %d\n", totalFiles)
+	fmt.Printf("Total time taken: %v\n\n", totalTime)
+	fmt.Printf("Total files found: %d\n\n", totalFiles)
 
 	displayCounts(counts)
 
