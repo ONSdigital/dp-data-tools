@@ -76,6 +76,10 @@ func findFiles(directory string, counts map[string]int, filterType string, lates
 				return nil
 			}
 
+			if jsonData.DataType == "dataset" {
+				return nil
+			}
+
 			count++
 
 			if filterType == "" || jsonData.DataType == filterType {
