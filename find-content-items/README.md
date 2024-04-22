@@ -10,7 +10,7 @@ The script provides options to filter the search results by type, and the script
 Optionally, you can choose to include only the latest release of each content item. As with the `type` filtering, the script will only display counts of the latest release of all content types. This can be used in conjunction with the filtering by `type`.
 
 ### Display Statistics: 
-After the search is complete, the script will display the count for each the found content items. This gives you a quick overview of the distribution of content items based on their types.
+After the search is complete, the script will display the count for each of the found content items. This gives you a quick overview of the distribution of content items based on their types.
 
 ## Prerequisites
 
