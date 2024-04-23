@@ -61,7 +61,7 @@ func findFiles(directory string, counts map[string]int, filterType string, lates
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() && info.Name() == "data.json" {
+		if !info.IsDir() && (info.Name() == "data.json") || (info.Name() == "data_cy.json") {
 			data, err := os.ReadFile(path)
 			if err != nil {
 				return err
