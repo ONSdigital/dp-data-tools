@@ -129,7 +129,7 @@ func main() {
 		case "library", "library-v2":
 			// do nothing for libraries
 
-		case "nomad-job", "nomad-pipeline":
+		case "nomad-job", "nomad-pipeline", "docker-deploy":
 			// check these in same way
 			for _, group := range manifest.Nomad.Groups {
 				// group has Class name of web, publishing or management
@@ -161,6 +161,7 @@ func main() {
 			// do nothing for this manifest type
 
 		default:
+			fmt.Printf("In file: %s\n", ymlName)
 			fmt.Printf("Unknown manifest.Type: %s\n", manifest.Type)
 			os.Exit(101)
 		}
