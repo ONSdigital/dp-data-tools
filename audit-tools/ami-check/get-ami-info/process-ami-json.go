@@ -94,6 +94,7 @@ const (
 )
 
 func main() {
+	ensureDirectoryExists(resultsDir)
 	resultsFile, err := os.Create(resultsDir + "/sorted-amis.txt")
 	check(err)
 	defer resultsFile.Close()
@@ -180,6 +181,12 @@ func main() {
 	// Save list with all into, so that scan-repo can utilise creation dates to determine how far back in time to process other repo's.
 	for _, imageFile := range AllImageFiles {
 		displayAndSave(idsFile, fmt.Sprintf("%s, %s, %s\n", imageFile.ImageId, imageFile.CreationDate, imageFile.Name))
+	}
+}
+
+func ensureDirectoryExists(dirName string) {
+	if _, err := os.Stat(dirName); os.IsNotExist(err) {
+		check(os.Mkdir(dirName, 0700))
 	}
 }
 
