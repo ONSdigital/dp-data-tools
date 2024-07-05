@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+mkdir -p tmp
+
 # get staging ami info
 export ONS_DP_ENV=staging FLY_TARGET=ci AWS_DEFAULT_PROFILE=dp-staging AWS_DEFAULT_REGION=eu-west-2 ONS_DP_AWS_REGION=eu-west-2 AWS_PROFILE=dp-staging
 unset AWS_DEFAULT_PROFILE AWS_DEFAULT_REGION ANSIBLE_REMOTE_USER
