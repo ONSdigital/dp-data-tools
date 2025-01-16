@@ -16,6 +16,7 @@ DP_CONFIGS?=../../../dp-configs
 DP_KAFKA?=../../../dp-kafka
 export DP_SETUP?=../../../dp-setup
 export KEY_ADMIN_DIR?=$(DP_SETUP)/csr/private
+LOG_QUIET?=1
 
 host_num?=publishing 3
 host_bin=bin-$(APP)
@@ -36,7 +37,7 @@ export ARN_FILE=$(CERT_DIR)/$(CERT_FILE_PREFIX).arn
 ########################################
 
 drain:
-	GOOS=linux make clean-deploy deploy clean
+	GOOS=linux GOARCH=amd64 $(MAKE) clean-deploy deploy clean
 
 pre-build: ensure-dirs ensure-vars
 
@@ -51,19 +52,15 @@ ensure-vars:
 
 # convert secrets to env vars, add env vars for APP
 env-vars:
-	@if [[ -f $(VARS_SH) ]]; then \
-		cat $(VARS_SH); \
-	elif [[ -f $(SECRETS_JSON) ]]; then \
-		jq -r ' . as $$o |  keys | .[] | "export " + . + "=" + ($$o[.] | tojson)' $(SECRETS_JSON) | grep '^export KAFKA_' | sed 's/\\n/\n/g'; \
-	fi
-	@echo export SNOOZE=false KAFKA_PARALLEL_MESSAGES=12 KAFKA_BATCH_SIZE=100 LOG_QUIET=1
+	@$(DP_CONFIGS)/scripts/secrets-admin $(CERT_APP) --export 'KAFKA_*'
+	@echo export SNOOZE=false KAFKA_PARALLEL_MESSAGES=12 KAFKA_BATCH_SIZE=100 LOG_QUIET=$(LOG_QUIET)
 	@echo export KAFKA_CONSUMED_TOPIC="$(TOPIC)" KAFKA_CONSUMED_GROUP="$(GROUP)"
 
 build-bin: pre-build
 	cwd=$(PWD) && cd $(DP_KAFKA) && GOOS=$(GOOS) go build -o $$cwd/$(BUILD_ARCH)/$(APP) examples/$(APP)/main.go
 
 build-script: pre-build
-	make env-vars > $(BUILD_SCRIPT)
+	$(MAKE) env-vars > $(BUILD_SCRIPT)
 
 build: pre-build build-bin build-script
 

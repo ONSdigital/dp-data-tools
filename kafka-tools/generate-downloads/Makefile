@@ -37,7 +37,7 @@ SECRETS_JSON=$(DP_CONFIGS)/secrets/$(ENV)/$(SECRETS_APP).json
 
 .PHONY: all
 all: clean
-	make GOOS=linux build deploy clean
+	make GOOS=linux GOARCH=amd64 build deploy clean
 
 .PHONY: pre-build
 pre-build: secrets
@@ -65,6 +65,7 @@ env-vars:
 	@echo export INSTANCE_ID="$(INSTANCE_ID)" DATASET_ID="$(DATASET_ID)"
 	@echo export VERSION=$(VERSION) EDITION="$(EDITION)" TIMEOUT=$(TIMEOUT)
 	@echo export KAFA_PRODUCER_TOPIC="$(KAFKA_PRODUCER_TOPIC)" SERVICE="$(SERVICE)"
+	@echo export GENERATE_DOWNLOADS_TOPIC="$(GENERATE_DOWNLOADS_TOPIC)"
 
 .PHONY: deploy
 deploy: build script

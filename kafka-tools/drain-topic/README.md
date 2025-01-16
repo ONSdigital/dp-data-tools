@@ -20,10 +20,10 @@ You will need:
   * `dp scp` will be used to put the consumer binary into the env
   * then `dp ssh` to run it in the env
 
-Get them up-to-date:
+Get them up-to-date (for example):
 ```bash
 cd ~/src/github.com/ONSdigital/dp-configs # wherever you keep this
-git switch master && git pull             # get up-to-date
+git switch main && git pull               # get up-to-date
 
 cd ~/src/github.com/ONSdigital/dp-kafka   # wherever you keep this
 git switch main && git pull               # get up-to-date
