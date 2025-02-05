@@ -66,19 +66,23 @@ For the `import-observations-inserted` topic, the consumer app is: `dp-import-tr
 and the *drain* step would therefore be:
 
 ```bash
-make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker ENV=sandbox       # or ENV=prod
+make drain TOPIC=import-observations-inserted GROUP=dp-import-tracker ENV=sandbox    # or ENV=prod
+
+# a different example for another often-wedged topic, this time in Prod:
+make drain TOPIC=filter-job-submitted GROUP=dp-dataset-exporter ENV=prod
 ```
 
-Hit **Ctrl-C** to stop the consumer once it acquiesces (i.e. no more messages to consume).
+After a while, hit **Ctrl-C** to stop the consumer once it acquiesces (i.e. no more messages to consume).
 
 ### Clean up
 
 This will remove files that were copied onto the environment by running the `make drain` target and any files built locally from the same command:
 
 ```bash
-make clean ENV=sandbox       # or ENV=prod
+make clean ENV=sandbox       # as appropriate
+make clean ENV=prod
 ```
 
 ### In nomad, restart the stopped service
 
-Restart the app to return normality. Check all's well.
+Restart the app to return normality. Check all is well.

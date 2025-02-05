@@ -28,31 +28,21 @@ BUILD=build
 BUILD_ARCH=$(BUILD)/$(GOOS)-$(GOARCH)
 BUILD_SCRIPT=$(BUILD_ARCH)/$(APP).sh
 
-export SECRETS_JSON=$(DP_CONFIGS)/secrets/$(ENV)/$(CERT_APP).json
-CERT_DIR=$(KEY_ADMIN_DIR)/keys/$(ENV)/$(SUBNET)/$(CERT_APP)
-CERT_FILE_PREFIX=$(CERT_APP).$(SUBNET).kafka.$(ENV).dp.ons.private
-VARS_SH=$(CERT_DIR)/$(CERT_FILE_PREFIX).vars.sh
-export ARN_FILE=$(CERT_DIR)/$(CERT_FILE_PREFIX).arn
-
 ########################################
 
 drain:
 	GOOS=linux GOARCH=amd64 $(MAKE) clean-deploy deploy clean
 
-pre-build: ensure-dirs ensure-vars
+pre-build: ensure-dirs
 
 ensure-dirs:
 	[[ -d $(DP_CONFIGS) ]]
 	[[ -d $(DP_KAFKA) ]]
 	mkdir -p $(BUILD_ARCH)
 
-# drain-topic needs KAFKA_SEC_CLIENT_CERT from either key-admin (VARS_SH) or secrets
-ensure-vars:
-	@[[ -f $(VARS_SH) ]] || ./scripts/ensure_vars
-
 # convert secrets to env vars, add env vars for APP
 env-vars:
-	@$(DP_CONFIGS)/scripts/secrets-admin $(CERT_APP) --export 'KAFKA_*'
+	@$(DP_CONFIGS)/scripts/secrets-admin $(ENV) $(SUBNET) $(CERT_APP) --export 'KAFKA_*'
 	@echo export SNOOZE=false KAFKA_PARALLEL_MESSAGES=12 KAFKA_BATCH_SIZE=100 LOG_QUIET=$(LOG_QUIET)
 	@echo export KAFKA_CONSUMED_TOPIC="$(TOPIC)" KAFKA_CONSUMED_GROUP="$(GROUP)"
 
@@ -74,4 +64,4 @@ clean: clean-deploy
 clean-deploy:
 	dp ssh $(ENV) $(host_num) -- 'bash -c "[[ ! -d $(host_bin) ]] || rm -r $(host_bin)"'
 
-.PHONY: drain pre-build ensure-dirs ensure-vars env-vars build build-bin build-script deploy clean clean-deploy
+.PHONY: drain pre-build ensure-dirs env-vars build build-bin build-script deploy clean clean-deploy
