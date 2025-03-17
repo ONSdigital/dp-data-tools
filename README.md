@@ -29,3 +29,7 @@ Some of these tools require [dp-cli](https://github.com/ONSdigital/dp-cli).
 
 * [Generate Topics database](./topics-tools/gen-topics-database)
 * [Update topics IDs](./mongo-fixes/update-topic-ids)
+
+### zebedee content related
+
+* [Collection and Release Publishing timings](./zebedee-content-tools/publishing-timings)
