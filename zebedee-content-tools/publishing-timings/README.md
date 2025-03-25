@@ -5,7 +5,10 @@
 This tool traverses the publish-log directory in the zebedee content workspace and extracts timings to provide an
 illustration of the length of time scheduled collections and the releases they are part of take to pre-publish and
 publish. It does this by identifying the relevant collections, getting the earliest and latest timestamps in the file
-related to [pre-]publishing activities. It then augments this with file counts and
+related to [pre-]publishing activities. It then augments this with file counts and sizes from the published content 
+directories associated with the collections. The results are then collated and saved to csv files, one for individual
+collections and one for releases (all collections published on the same schedule) whch can easily be imported into a
+spreadsheet or similar.
 
 ## How to use
 
@@ -21,14 +24,14 @@ The following command line arguments are available to modify the default setting
 
 | Flag     | Description                                          | Default                             | 
 |----------|------------------------------------------------------|-------------------------------------|
-| `-dir`   | path to publish-log directory                        | `/var/florence/zebedee/publish-log` |
-| `-from`  | date from (eg. `2024-03-17`)                         | 365 days ago                        |
-| `-to`    | date to   (eg. `2025-03-17`)                         | today                               |
-| `-times` | publishing times (comma seperated eg, `07:00,09:30`) | `07:00`                             |
-| `-extra` | extra minutes to add when matching timestamps        | `2`                                 |
 | `-cols`  | filename of cols csv to output                       | `collections.csv`                   |
-| `-rels`  | filename of releases csv to output                   | `releases.csv`                      |
 | `-debug` | debug mode                                           |                                     |
+| `-dir`   | path to publish-log directory                        | `/var/florence/zebedee/publish-log` |
+| `-extra` | extra minutes to add when matching timestamps        | `2`                                 |
+| `-from`  | date from (eg. `2024-03-17`)                         | 365 days ago                        |
+| `-rels`  | filename of releases csv to output                   | `releases.csv`                      |
+| `-times` | publishing times (comma seperated eg, `07:00,09:30`) | `07:00`                             |
+| `-to`    | date to   (eg. `2025-03-17`)                         | today                               |
 
 Note: If a collection takes more than a minute to publish, its timestamp will be later than the publish time. Therefore
 we also search for collections with a timestamp some extra minutes after the desired timestamp. I.e. `-extra 2` means

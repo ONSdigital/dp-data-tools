@@ -34,12 +34,12 @@ func main() {
 	defaultFrom := time.Now().Add(-24 * 365 * time.Hour).Format(time.DateOnly) // One year Ago
 
 	config := runConfig{}
-	flag.StringVar(&config.dir, "dir", defaultDir, "path to publish-log directory")
-	flag.StringVar(&config.collectionsFile, "cols", defaultCollectionsCSV, "filename of cols csv")
-	flag.StringVar(&config.releasesFile, "rels", defaultReleasesCSV, "filename of releases csv")
-	flag.StringVar(&config.dateFrom, "from", defaultFrom, "date from")
-	flag.StringVar(&config.dateTo, "to", defaultTo, "date to")
-	flag.IntVar(&config.extraMins, "extra", defaultExtraMins, "extra minutes to add when matching timestamps")
+	flag.StringVar(&config.Dir, "dir", defaultDir, "path to publish-log directory")
+	flag.StringVar(&config.CollectionsFile, "cols", defaultCollectionsCSV, "filename of cols csv")
+	flag.StringVar(&config.ReleasesFile, "rels", defaultReleasesCSV, "filename of releases csv")
+	flag.StringVar(&config.DateFrom, "from", defaultFrom, "date from")
+	flag.StringVar(&config.DateTo, "to", defaultTo, "date to")
+	flag.IntVar(&config.ExtraMins, "extra", defaultExtraMins, "extra minutes to add when matching timestamps")
 	timesStr := flag.String("times", defaultTime, "publishing times (comma seperated)")
 	debug := flag.Bool("debug", false, "debug mode")
 	flag.Parse()
@@ -50,8 +50,8 @@ func main() {
 		slog.Debug("debug mode")
 	}
 
-	config.times = strings.Split(*timesStr, ",")
-	slog.Debug("parsed config", "config", config.times)
+	config.Times = strings.Split(*timesStr, ",")
+	slog.Debug("parsed config", "config", config)
 
 	err := run(config)
 	if err != nil {
@@ -61,32 +61,32 @@ func main() {
 }
 
 type runConfig struct {
-	dir             string
-	times           []string
-	dateFrom        string
-	dateTo          string
-	collectionsFile string
-	releasesFile    string
-	extraMins       int
+	Dir             string
+	Times           []string
+	DateFrom        string
+	DateTo          string
+	CollectionsFile string
+	ReleasesFile    string
+	ExtraMins       int
 }
 
 func run(config runConfig) error {
-	slog.Info("run start", "dir", config.dir)
+	slog.Info("run start", "Dir", config.Dir)
 
-	dateFrom, err := time.Parse(time.DateOnly, config.dateFrom)
+	dateFrom, err := time.Parse(time.DateOnly, config.DateFrom)
 	if err != nil {
 		return fmt.Errorf("parse dateFrom: %v", err)
 	}
-	dateTo, err := time.Parse(time.DateOnly, config.dateTo)
+	dateTo, err := time.Parse(time.DateOnly, config.DateTo)
 	if err != nil {
 		return fmt.Errorf("parse dateTo: %v", err)
 	}
-	dfs := os.DirFS(config.dir)
+	dfs := os.DirFS(config.Dir)
 
 	// main workers
-	globs := identifyGlobs(dateFrom, dateTo, config.times, config.extraMins)
+	globs := identifyGlobs(dateFrom, dateTo, config.Times, config.ExtraMins)
 	collectionsRead := readCollections(dfs, globs)
-	collectionsFiltered := filterCollections(collectionsRead, config.times)
+	collectionsFiltered := filterCollections(collectionsRead, config.Times)
 	colStats := calculateCollectionStats(collectionsFiltered)
 	appendedStats := appendDirStats(dfs, colStats)
 
@@ -94,8 +94,8 @@ func run(config runConfig) error {
 	slog.Debug("col stats", "colstats", cStats)
 	slog.Debug("release stats", "relstats", rStats)
 
-	outputCollections(config.collectionsFile, cStats)
-	outputReleases(config.releasesFile, rStats)
+	outputCollections(config.CollectionsFile, cStats)
+	outputReleases(config.ReleasesFile, rStats)
 
 	slog.Info("run end")
 	return nil
@@ -151,17 +151,14 @@ type PublishResult struct {
 	Transaction Transaction `json:"transaction"`
 }
 type Transaction struct {
-	Id        string `json:"id"`
-	StartDate string `json:"startDate"`
-	//EndDate   string    `json:"endDate"`
-	UriInfos []UriInfo `json:"uriInfos"`
+	Id        string    `json:"id"`
+	StartDate string    `json:"startDate"`
+	UriInfos  []UriInfo `json:"uriInfos"`
 }
 
 type UriInfo struct {
 	Action string `json:"action"`
-	//Start    string `json:"start"`
-	End string `json:"end"`
-	//Duration int    `json:"duration"`
+	End    string `json:"end"`
 }
 
 // Read the collections from the collection JSON
