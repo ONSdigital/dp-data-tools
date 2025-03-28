@@ -25,6 +25,16 @@ const (
 	defaultReleasesCSV    = "releases.csv"
 )
 
+var timeLocation *time.Location
+
+func init() {
+	loc, err := time.LoadLocation("Europe/London")
+	if err != nil {
+		log.Fatal(err)
+	}
+	timeLocation = loc
+}
+
 func main() {
 	logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
 	slog.SetDefault(slog.New(logHandler))
@@ -111,9 +121,9 @@ func identifyGlobs(dateFrom, dateTo time.Time, times []string, extraMins int) ch
 		defer close(globs)
 		for day := dateFrom; !day.After(dateTo); day = day.AddDate(0, 0, 1) {
 			for _, timestamp := range timestamps {
-				localtime := time.Date(day.Year(), day.Month(), day.Day(), timestamp.Hour(), timestamp.Minute(), 0, 0, time.Local)
-				utcTime := localtime.UTC()
-				glob := fmt.Sprintf("%s*.json", utcTime.Format("2006-01-02-15-04"))
+				// Timestamps in filename are in london time not UTC
+				localtime := time.Date(day.Year(), day.Month(), day.Day(), timestamp.Hour(), timestamp.Minute(), 0, 0, timeLocation)
+				glob := fmt.Sprintf("%s*.json", localtime.Format("2006-01-02-15-04"))
 				globs <- glob
 			}
 		}
@@ -125,7 +135,7 @@ func identifyGlobs(dateFrom, dateTo time.Time, times []string, extraMins int) ch
 func potentialTimesStamps(times []string, extraMins int) []time.Time {
 	timestamps := make([]time.Time, 0, len(times)*(extraMins+1))
 	for _, ts := range times {
-		t, err := time.Parse("15:04", ts) // 15:04 is a format not a value
+		t, err := time.ParseInLocation("15:04", ts, time.UTC) // 15:04 is a format not a value
 		if err != nil {
 			log.Fatalf("parse time: %v", err)
 		}
@@ -212,7 +222,7 @@ func filterCollections(cols chan Collection, times []string) chan Collection {
 				slog.Debug("skipping non-scheduled collection", "name", col.Name, "type", col.Type)
 				continue
 			}
-			colLocalTime := col.PublishDate.Local().Format("15:04")
+			colLocalTime := col.PublishDate.In(timeLocation).Format("15:04")
 			if !slices.Contains(times, colLocalTime) {
 				slog.Debug("skipping collection with unmatched publish time", "name", col.Name, "colLocalTime", colLocalTime)
 				continue
@@ -392,6 +402,9 @@ func guessReleaseDescription(filename string) string {
 	}
 	if matched, _ := regexp.MatchString("-gdpquarterly", filename); matched {
 		return "Quarterly National Accounts"
+	}
+	if matched, _ := regexp.MatchString("-publicsector", filename); matched {
+		return "Public Sector Finances"
 	}
 	return ""
 }
