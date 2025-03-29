@@ -4,6 +4,7 @@ SHELL=bash
 APP=generate-downloads
 
 ENV?=sandbox
+SUBNET?=publishing
 INSTANCE_ID?=8e4b7e60-1136-4da4-bcb8-479c71a4aafc
 DATASET_ID?=uk-spending-on-cards
 EDITION?=time-series
@@ -26,21 +27,19 @@ DP_CONFIGS?=../../../dp-configs
 SERVICE?=cantabular
 
 ifeq ($(SERVICE), cantabular)
-	SECRETS_APP?=dp-cantabular-filter-flex-api-publishing
+	SECRETS_APP?=dp-cantabular-filter-flex-api-$(SUBNET)
 	KAFKA_PRODUCER_TOPIC?=cantabular-export-start
 else
-	SECRETS_APP?=dp-dataset-api-publishing
+	SECRETS_APP?=dp-dataset-api-$(SUBNET)
 	KAFKA_PRODUCER_TOPIC?=filter-job-submitted
 endif
-
-SECRETS_JSON=$(DP_CONFIGS)/secrets/$(ENV)/$(SECRETS_APP).json
 
 .PHONY: all
 all: clean
 	make GOOS=linux GOARCH=amd64 build deploy clean
 
 .PHONY: pre-build
-pre-build: secrets
+pre-build:
 	mkdir -p $(BUILD_ARCH)
 
 .PHONY: build
@@ -55,13 +54,9 @@ script: pre-build
 run: script
 	. $(BUILD_SCRIPT); go run -race main.go
 
-.PHONY: secrets
-secrets:
-	[[ -f $(SECRETS_JSON) ]] || gpg $(SECRETS_JSON).asc
-
 .PHONY: env-vars
 env-vars:
-	@set -o pipefail; jq -r ' . as $$o |  keys | .[] | "export " + . + "=" + ($$o[.] | tojson)' $(SECRETS_JSON) | sed 's/\\n/\n/g'
+	@$(DP_CONFIGS)/scripts/secrets-admin $(ENV) $(SUBNET) $(SECRETS_APP) --export '*'
 	@echo export INSTANCE_ID="$(INSTANCE_ID)" DATASET_ID="$(DATASET_ID)"
 	@echo export VERSION=$(VERSION) EDITION="$(EDITION)" TIMEOUT=$(TIMEOUT)
 	@echo export KAFA_PRODUCER_TOPIC="$(KAFKA_PRODUCER_TOPIC)" SERVICE="$(SERVICE)"
