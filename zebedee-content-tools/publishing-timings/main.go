@@ -97,7 +97,7 @@ func run(config runConfig) error {
 	globs := identifyGlobs(dateFrom, dateTo, config.Times, config.ExtraMins)
 	collectionsRead := readCollections(dfs, globs)
 	collectionsFiltered := filterCollections(collectionsRead, config.Times)
-	colStats := calculateCollectionStats(collectionsFiltered)
+	colStats := calculateCollectionStats(dfs, collectionsFiltered)
 	appendedStats := appendDirStats(dfs, colStats)
 
 	cStats, rStats := collectStats(appendedStats)
@@ -169,6 +169,7 @@ type Transaction struct {
 type UriInfo struct {
 	Action string `json:"action"`
 	End    string `json:"end"`
+	URI    string `json:"uri"`
 }
 
 // Read the collections from the collection JSON
@@ -247,7 +248,7 @@ type CollectionStats struct {
 }
 
 // calculate stats for an individual collection
-func calculateCollectionStats(cols chan Collection) chan CollectionStats {
+func calculateCollectionStats(dfs fs.FS, cols chan Collection) chan CollectionStats {
 	colstats := make(chan CollectionStats)
 	go func() {
 		defer close(colstats)
@@ -263,6 +264,8 @@ func calculateCollectionStats(cols chan Collection) chan CollectionStats {
 			ps, pe := col.PublishStartDate, col.PublishEndDate
 			colStat.PublishStart = &ps
 			colStat.PublishEnd = &pe
+
+			prePubUris := loadPrePubUrisFromManifest(dfs, col.filename)
 
 			// Next look at the train transaction timestamps in the collection json (publishResults[])
 			for _, publishResult := range col.PublishResults {
@@ -281,11 +284,9 @@ func calculateCollectionStats(cols chan Collection) chan CollectionStats {
 					colStat.PrepublishEnd = &newEnd
 				}
 
-				created := 0
 				// Now go through every uri in the transaction and get the max end time for pre-publishing
 				for _, t := range publishResult.Transaction.UriInfos {
-					if t.Action == "created" {
-						created++
+					if t.Action == "created" && slices.Contains(prePubUris, t.URI) {
 						// Non-standard timestamp format in transaction publishResults :-(
 						te, err := time.Parse("2006-01-02T15:04:05.999999999+0000", t.End)
 						if err != nil {
@@ -304,6 +305,43 @@ func calculateCollectionStats(cols chan Collection) chan CollectionStats {
 		}
 	}()
 	return colstats
+}
+
+type manifest struct {
+	FilesToCopy []fileToCopy `json:"filesToCopy"`
+}
+type fileToCopy struct {
+	Target string `json:"target"`
+}
+
+func loadPrePubUrisFromManifest(dfs fs.FS, filename string) []string {
+	slog.Debug("loading uris from manifest", "filename", filename)
+	dirname := filename[:strings.Index(filename, ".json")]
+	sub, err := fs.Sub(dfs, dirname)
+	if err != nil {
+		log.Fatal("cannot open subdir: %v", err)
+	}
+
+	file, err := sub.Open("manifest.json")
+	if err != nil {
+		log.Fatal("cannot open manifest: %v", err)
+	}
+	defer file.Close()
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatal("read file", "filename", filename, "err", err)
+	}
+	mf := manifest{}
+	err = json.Unmarshal(bytes, &mf)
+	if err != nil {
+		log.Fatal("unmarshal manifest", "filename", filename, "err", err)
+	}
+
+	uris := make([]string, 0, len(mf.FilesToCopy))
+	for _, ftc := range mf.FilesToCopy {
+		uris = append(uris, ftc.Target)
+	}
+	return uris
 }
 
 func appendDirStats(dfs fs.FS, cols chan CollectionStats) chan CollectionStats {
