@@ -160,6 +160,15 @@ func main() {
 		case "static-site":
 			// do nothing for this manifest type
 
+		case "cdn-sync":
+			// do nothing for this manifest type
+
+		case "stub":
+			// do nothing for this manifest type
+
+		case "build-and-cdn":
+			// do nothing for this manifest type
+
 		default:
 			fmt.Printf("In file: %s\n", ymlName)
 			fmt.Printf("Unknown manifest.Type: %s\n", manifest.Type)
