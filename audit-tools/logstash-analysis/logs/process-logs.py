@@ -642,6 +642,15 @@ def process_line(line):
         # [WARN ][org.logstash.common.io.DeadLetterQueueWriter] Event previously submitted to dead letter queue. Skipping...
         return 185
     
+    # After turning persistent queues on:
+    if '[INFO ][logstash.pipelinesregistry] Removed pipeline from registry successfully' in line:
+        return 186
+    if '[INFO ][org.logstash.ackedqueue.QueueUpgrade] No PQ version file found, upgrading to PQ v2' in line:
+        return 187
+    if '[ERROR][logstash.filters.ruby    ]' in line:
+        # [ERROR][logstash.filters.ruby    ] pe%22:%20%22string%22%20%7D,%20%22name%22:%20%7B%20%22description%22:%20%22The%20name%20of%20the%20statistician%22,%20%22type%22:%20%22string%22%20%7D,%20%22telephone%22:%20%7B%20%22description%22:%20%22Telephone%20number%20to%20contact%20the%20statistician%2 ... and a lot more afer this
+        return 188
+    
     # Do something with 'line'
     warn = "Unknown error line: " + line
     r_warn(warn)
