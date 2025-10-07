@@ -1,0 +1,490 @@
+Attempting to setup chrome debug port connection ...
+
+
+
+Repo & branch,          require,  required,   dismiss stale,  require,  restrict,  require,  require,   concourse,  concourse,  concourse,   concourse,  require,  require,  include,         restrict,  people,                       allow,   allow
+ ,                      pull,     approving,  pull request,   review,   who can,   status,   branches,  -ci/,       -ci/,       -ci/,        -ci/,       signed,   linear,   administrators,  who can,   teams,                        force,   deletions
+ ,                      request,  reviews,    approvals,      from,     dismiss,   checks,   to be up,  {repo,      {repo,      {repo,       {repo,      commits,  history,  ,                push to,   or apps,                      pushes,  
+ ,                      reviews,  ,           when new,       code,     pull,      to pass,  to date,   -name},     -name},     -name},      -name},     ,         ,         ,                matching,  with,                         ,        
+ ,                      before,   ,           commits are,    owners,   request,   before,   before,    -audit,     -build,     -component,  -unit,      ,         ,         ,                branches,  push,                         ,        
+ ,                      merging,  ,           pushed,         ,         reviews,   merging,  merging,   ,           ,           ,            ,           ,         ,         ,                ,          access,                       ,        
+babbage
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+babbage
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-api-router
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-api-router
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-areas-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-areas-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-bulletin-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-bulletin-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cantabular-api-ext
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cantabular-api-ext
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cantabular-server
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cantabular-server
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cantabular-ui
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cantabular-ui
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-code-list-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-code-list-api
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-collection-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-collection-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dataset-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dataset-api
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dataset-exporter
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dataset-exporter
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dataset-exporter-xlsx
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dataset-exporter-xlsx
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-extractor
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-extractor
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-importer
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-importer
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-search-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-search-api
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-search-builder
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-dimension-search-builder
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-download-service
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-download-service
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-file-downloader
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-file-downloader
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-filter-api
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-filter-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-cookie-controller
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-cookie-controller
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-dataset-controller
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-dataset-controller
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-feedback-controller
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-feedback-controller
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-filter-dataset-controller
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-filter-dataset-controller
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-geography-controller
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-geography-controller
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-homepage-controller
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-homepage-controller
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-renderer
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-renderer
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-router
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-router
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-search-controller
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-frontend-search-controller
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-hierarchy-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-hierarchy-api
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-hierarchy-builder
+  :  cmd-develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-hierarchy-builder
+  :  cmd-master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-hierarchy-builder
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-hierarchy-builder
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-identity-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-identity-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-image-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-image-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-image-importer
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-image-importer
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-api
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-cantabular-dataset
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-cantabular-dataset
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-cantabular-dimension-options
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-cantabular-dimension-options
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-cantabular-dimension-options
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-reporter
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-reporter
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-tracker
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-import-tracker
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-legacy-redirector
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-legacy-redirector
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-observation-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-observation-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-observation-extractor
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-observation-extractor
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-observation-importer
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-observation-importer
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-permissions-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-permissions-api
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-publishing-dataset-controller
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-publishing-dataset-controller
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-recipe-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-recipe-api
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-api
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-api
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-builder
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-builder
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-data-extractor
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-data-extractor
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-data-importer
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-data-importer
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-reindex-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-search-reindex-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-sessions-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-sessions-api
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-static-file-publisher
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-static-file-publisher
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-table-renderer
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-table-renderer
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-topic-api
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-topic-api
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-upload-service
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-upload-service
+  :  develop
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+florence
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+florence
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+project-brian
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+project-brian
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+sixteens
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+sixteens
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+the-train
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+the-train
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+zebedee
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+zebedee
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-api-clients-go
+  :  main
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-authorisation
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-component-test
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cookies
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-deployer
+  :  master
+ ,                      on,       1,          on,             on,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-design-system
+  :  main
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-developer-site
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-elasticsearch
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-graph
+  :  main
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-healthcheck
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-kafka
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-logging
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-logging
+  :  feature/performance-test
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-mocking
+  ERROR: No 'Branches' created
+
+dp-mongodb
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-net
+  :  main
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-nomad
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-performance-dashboard
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-performance-dashboard
+  :  develop
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-reporter-client
+  :  main
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-s3
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-ssqs
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       - ,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-table-builder-ui
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-table-builder-ui
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-vault
+  :  main
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+go-ns
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+gremgo-neptune
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+log.go
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+s3crypto
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-operations
+  :  main
+ ,                      on,       1,          on,             - ,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp
+  :  main
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-ci
+  :  master
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-cli
+  :  main
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-setup
+  :  develop
+ ,                      on,       1,          on,             on,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-setup
+  :  master
+ ,                      on,       1,          on,             on,       - ,        - ,       - ,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-configs
+  :  master
+ ,                      on,       1,          on,             on,       on,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 
+dp-data-tools
+  :  master
+ ,                      on,       1,          on,             - ,       - ,        on,       on,        - ,         - ,         - ,          - ,         on,       - ,       on,              on,        ONSdigital/digitalpublishing, - ,      - 

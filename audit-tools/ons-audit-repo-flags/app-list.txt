@@ -1,0 +1,121 @@
+# lines beginning with a HASH character are comment lines
+#
+# update this list as needed.
+#
+# apps as per deployed by nomand, and as seen in concourse:
+
+babbage
+# dp-api-poc     Proof of Concept: repo ? => dp-apipoc-server
+dp-api-router
+dp-areas-api
+dp-bulletin-api
+dp-cantabular-api-ext
+dp-cantabular-server
+dp-cantabular-ui
+dp-code-list-api
+dp-collection-api
+dp-dataset-api
+dp-dataset-exporter
+dp-dataset-exporter-xlsx
+# dp-developer-poc        Proof of Concept: repo ? => dp-developer-site
+dp-dimension-extractor
+dp-dimension-importer
+dp-dimension-search-api
+dp-dimension-search-builder
+dp-download-service
+dp-file-downloader
+dp-filter-api
+dp-frontend-cookie-controller
+dp-frontend-dataset-controller
+dp-frontend-feedback-controller
+dp-frontend-filter-dataset-controller
+dp-frontend-geography-controller
+dp-frontend-homepage-controller
+dp-frontend-renderer
+dp-frontend-router
+dp-frontend-search-controller
+dp-hierarchy-api
+dp-hierarchy-builder
+dp-identity-api
+dp-image-api
+dp-image-importer
+dp-import-api
+dp-import-cantabular-dataset
+dp-import-cantabular-dimension-options
+dp-import-reporter
+dp-import-tracker
+dp-legacy-redirector
+dp-observation-api
+dp-observation-extractor
+dp-observation-importer
+dp-permissions-api
+dp-publishing-dataset-controller
+dp-recipe-api
+dp-search-api
+# has following been removed from concourse ? (9th July 2021 Q added)
+dp-search-builder
+dp-search-data-extractor
+dp-search-data-importer
+dp-search-reindex-api
+dp-sessions-api
+dp-static-file-publisher
+dp-table-renderer
+dp-topic-api
+dp-upload-service
+florence
+project-brian
+sixteens
+the-train
+zebedee
+
+# libraries as per appearance in Concourse:
+
+dp-api-clients-go
+dp-authorisation
+dp-component-test
+dp-cookies
+dp-deployer
+dp-design-system
+# what is / does dp-developer-hub do (question added 9th July 2021) as its in concourse, but its not a repo ?
+# dp-developer-hub
+dp-developer-site
+dp-elasticsearch
+dp-graph
+dp-healthcheck
+dp-kafka
+dp-logging
+dp-mocking
+dp-mongodb
+dp-net
+dp-nomad
+dp-packer
+dp-performance-dashboard
+dp-renderer
+dp-reporter-client
+dp-s3      
+dp-ssqs
+dp-table-builder-ui
+dp-vault
+go-ns
+gremgo-neptune
+log.go
+s3crypto
+
+# documentation:
+
+dp-operations
+
+# other:
+
+dp
+dp-ci
+dp-cli
+dp-setup
+dp-configs
+dp-data-tools
+
+# concourse has:
+# env-manager
+# env-packer
+#  but no repo's for the above pipelines ... so will they be lost if machine goes down ? how is concourse backed up ?
+£ and a few more, see list on concourse.
