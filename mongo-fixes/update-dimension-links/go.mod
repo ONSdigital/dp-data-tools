@@ -7,6 +7,5 @@ require (
 	github.com/ONSdigital/log.go v1.0.1
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/schollz/progressbar/v3 v3.6.1
-	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
-	golang.org/x/sys v0.0.0-20201022201747-fb209a7c41cd // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 )
