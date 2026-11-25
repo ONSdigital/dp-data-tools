@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"cmp"
 	"context"
 	"fmt"
@@ -9,44 +8,34 @@ import (
 	"net/http"
 	"os"
 	"slices"
-	"strconv"
 	"strings"
 
+	"github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags/auth"
+	"github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags/repos"
+	"github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags/teams"
 	"github.com/goccy/go-yaml"
 	"github.com/google/go-github/v74/github"
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 )
 
-const perPage = 100
-
-// TODO maybe do a search using the api to compute this list?
-var teams []string = []string{
-	"@ONSdigital/dissemination-open-sauce",
-	"@ONSdigital/dissemination-data-dissemination",
-	"@ONSdigital/dissemination-data-pipelines",
-	"@ONSdigital/dissemination-platform",
-}
-
 func main() {
 	ctx := context.Background()
 
-	authToken := os.Getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
-	if authToken == "" {
-		log.Fatal("no auth token supplied")
+	client, err := auth.NewClient()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	codeOwner := chooseTeam()
-	if strings.ToLower(codeOwner) == "q" {
+	codeOwner := teams.ChooseTeam()
+	if strings.EqualFold(strings.TrimSpace(codeOwner), "q") {
 		os.Exit(0)
 	}
 
-	client := github.NewClient(nil).WithAuthToken(authToken)
-
-	repos := searchRepos(ctx, client, codeOwner)
+	repositories := repos.SearchRepos(ctx, client, codeOwner)
 
 	fmt.Print("Getting repo image details")
-	results := make([]result, 0, len(repos))
-	for repoName, repo := range repos {
+	results := make([]result, 0, len(repositories))
+	for repoName, repo := range repositories {
 		buildImage, buildTag := getBuildImageTag(ctx, client, repo)
 		runImage, runTag := getRunImageTag(ctx, client, repo)
 		results = append(results, result{
@@ -58,55 +47,6 @@ func main() {
 	}
 	fmt.Println()
 	outputResults(results)
-}
-
-func chooseTeam() string {
-	fmt.Println("Choose a code-owner or enter one of your choice")
-	for i, team := range teams {
-		fmt.Printf(" %d - %s\n", i+1, team)
-	}
-	reader := bufio.NewReader(os.Stdin)
-	chosenTeam := ""
-	for chosenTeam == "" {
-		fmt.Print("-> ")
-		text, _ := reader.ReadString('\n')
-		text = strings.Replace(text, "\n", "", -1)
-		i, err := strconv.Atoi(text)
-		if err == nil {
-			if i > 0 && i <= len(teams) {
-				chosenTeam = teams[i-1]
-			}
-		} else {
-			chosenTeam = text
-		}
-	}
-	return chosenTeam
-}
-
-func searchRepos(ctx context.Context, client *github.Client, codeOwner string) map[string]*github.Repository {
-	repos := make(map[string]*github.Repository, 0)
-
-	fmt.Printf("Searching repos with owner %s", codeOwner)
-
-	for page := 1; page > 0; {
-		code, r, err := client.Search.Code(
-			ctx,
-			codeOwner+" org:onsdigital filename:CODEOWNERS",
-			&github.SearchOptions{ListOptions: github.ListOptions{Page: page, PerPage: perPage}},
-		)
-		if err != nil {
-			log.Fatal("search failed", err)
-		}
-		for _, result := range code.CodeResults {
-			if repo := result.Repository; repo != nil {
-				repos[*(repo.FullName)] = repo
-			}
-		}
-		page = r.NextPage
-		fmt.Print(".")
-	}
-	fmt.Println()
-	return repos
 }
 
 type result struct {
