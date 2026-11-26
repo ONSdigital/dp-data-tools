@@ -10,3 +10,7 @@ kafka-tools/.DS_Store
 *.log.gz
 *plain.log
 full-logs/
+
+/audit-tools/dis-repo-analysis/repo-analysis.csv
+/audit-tools/dis-repo-analysis/repo-analysis.md
+
