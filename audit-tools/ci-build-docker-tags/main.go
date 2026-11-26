@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"slices"
 	"strings"
 
@@ -26,9 +25,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	codeOwner := teams.ChooseTeam()
+	if err := run(ctx, client); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(ctx context.Context, client *github.Client) error {
+	codeOwner, err := teams.ChooseTeam()
+	if err != nil {
+		return err
+	}
 	if strings.EqualFold(strings.TrimSpace(codeOwner), "q") {
-		os.Exit(0)
+		return nil
+	}
+	codeOwner, err = teams.ValidateTeam(ctx, client, codeOwner)
+	if err != nil {
+		return err
 	}
 
 	repositories := repos.SearchRepos(ctx, client, codeOwner)
@@ -47,6 +59,7 @@ func main() {
 	}
 	fmt.Println()
 	outputResults(results)
+	return nil
 }
 
 type result struct {

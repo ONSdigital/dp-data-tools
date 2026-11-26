@@ -2,7 +2,9 @@ package teams
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -15,25 +17,23 @@ var teams []string = []string{
 	"@ONSdigital/dissemination-platform",
 }
 
-func ChooseTeam() string {
-	fmt.Println("Choose a code-owner, enter one of your choice, or q to quit")
+func ChooseTeam() (string, error) {
+	fmt.Println("Choose an ONSdigital team, enter @ONSdigital/team-slug, or q to quit")
 	for i, team := range teams {
 		fmt.Printf(" %d - %s\n", i+1, team)
 	}
 	reader := bufio.NewReader(os.Stdin)
-	chosenTeam := ""
-	for chosenTeam == "" {
-		fmt.Print("-> ")
-		text, _ := reader.ReadString('\n')
-		text = strings.TrimSpace(text)
-		i, err := strconv.Atoi(text)
-		if err == nil {
-			if i > 0 && i <= len(teams) {
-				chosenTeam = teams[i-1]
-			}
-		} else {
-			chosenTeam = text
-		}
+	fmt.Print("-> ")
+	text, err := reader.ReadString('\n')
+	if err != nil && (!errors.Is(err, io.EOF) || len(text) == 0) {
+		return "", fmt.Errorf("read team selection: %w", err)
 	}
-	return chosenTeam
+	text = strings.TrimSpace(text)
+	if i, err := strconv.Atoi(text); err == nil {
+		if i < 1 || i > len(teams) {
+			return "", fmt.Errorf("choose a team number between 1 and %d or enter @ONSdigital/team-slug", len(teams))
+		}
+		return teams[i-1], nil
+	}
+	return text, nil
 }
