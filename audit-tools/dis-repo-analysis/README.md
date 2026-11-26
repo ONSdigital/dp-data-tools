@@ -1,6 +1,6 @@
 # Repository analysis
 
-Reports repositories in ONSdigital whose CODEOWNERS file matches a selected owner.
+Reports repositories in ONSdigital whose CODEOWNERS file matches a selected team.
 Writes visibility, code owners, languages and a heuristic
 repository type to a CSV report, plus a Markdown chart summary. Classification
 evidence can optionally be included in the CSV.
@@ -23,6 +23,8 @@ make repo-analysis-with-evidence
 # Or directly:
 go run . -with-evidence
 ```
+
+Choose a numbered team or enter `@ONSdigital/team-slug`.
 
 Enter `q` at the team prompt to quit without searching repositories or writing reports.
 

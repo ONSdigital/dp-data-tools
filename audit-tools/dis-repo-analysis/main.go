@@ -8,6 +8,7 @@ import (
 
 	"github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags/auth"
 	"github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags/teams"
+	"github.com/google/go-github/v74/github"
 )
 
 func main() {
@@ -20,15 +21,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	codeOwner := teams.ChooseTeam()
-	if strings.EqualFold(strings.TrimSpace(codeOwner), "q") {
-		return
-	}
-	if codeOwner == "" {
-		log.Fatal("no code owner supplied")
-	}
-
-	if err := runAnalysis(ctx, client, codeOwner, "repo-analysis.csv", *withEvidence, log.Default()); err != nil {
+	if err := run(ctx, client, *withEvidence); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func run(ctx context.Context, client *github.Client, withEvidence bool) error {
+	codeOwner, err := teams.ChooseTeam()
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(strings.TrimSpace(codeOwner), "q") {
+		return nil
+	}
+	codeOwner, err = teams.ValidateTeam(ctx, client, codeOwner)
+	if err != nil {
+		return err
+	}
+	return runAnalysis(ctx, client, codeOwner, "repo-analysis.csv", withEvidence, log.Default())
 }

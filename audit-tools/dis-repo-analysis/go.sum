@@ -1,5 +1,5 @@
-github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags v0.0.0-20261125093734-efa7e05a14ea h1:hlR8A1r+QGRqsZOfBlV7YsqtXbIdrqgRG6x0BGCvZPo=
-github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags v0.0.0-20261125093734-efa7e05a14ea/go.mod h1:5xe8NP9/YbVwgO3xukH5yzIy9MmF4y82QDbyS//AQ7Q=
+github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags v0.0.0-20261126171458-98164afbb6e5 h1:7MJ6z05QvhwdzjjXan9RUGl1/3huknN29vSc81qBLH8=
+github.com/ONSdigital/dp-data-tools/audit-tools/ci-build-docker-tags v0.0.0-20261126171458-98164afbb6e5/go.mod h1:5xe8NP9/YbVwgO3xukH5yzIy9MmF4y82QDbyS//AQ7Q=
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
